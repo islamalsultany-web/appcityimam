@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>استيراد وتصدير اكسل</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+
+:root {
+    --bg: #edf3fb;
+    --card: #ffffff;
+    --ink: #0f172a;
+    --soft: #64748b;
+    --line: #d8e0ee;
+    --primary: #0f56d4;
+    --ok: #15803d;
+    --err: #b91c1c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Cairo', sans-serif;
+    color: var(--ink);
+    background: radial-gradient(circle at 12% 10%, #f9fbff, #eef4fb 42%, #e5edf8);
+    display: grid;
+    place-items: center;
+    padding: 14px;
+}
+
+.card {
+    width: min(620px, 100%);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    padding: 16px;
+    display: grid;
+    gap: 12px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+small { color: var(--soft); }
+
+.actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.btn {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #fff;
+    color: var(--ink);
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn.primary {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+}
+
+.back {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.status {
+    font-size: 0.92rem;
+    color: var(--soft);
+    min-height: 24px;
+    line-height: 1.5;
+}
+
+.status.ok { color: var(--ok); }
+.status.err { color: var(--err); }
+
+.note {
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+    padding: 10px;
+    color: var(--soft);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 700px) {
+    .actions { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="card">
+    <h1>استيراد وتصدير المستخدمين (Excel)</h1>
+    <small>الاعمدة المعتمدة: اسم المستخدم، كلمة المرور، تأكيد كلمة المرور، الرقم الوظيفي، رقم الباج، الشعبة، الوحدة، الدور</small>
+
+    <div class="actions">
+        <button id="templateBtn" class="btn" type="button">انشاء نموذج اكسل</button>
+        <button id="importBtn" class="btn primary" type="button">استيراد</button>
+        <button id="exportBtn" class="btn" type="button">تصدير</button>
+    </div>
+
+    <input id="fileInput" type="file" accept=".xlsx,.xls" style="display:none;">
+
+    <div id="status" class="status">جاهز.</div>
+
+    <div class="note">
+        عند الاستيراد: يُقبل الصف حتى لو كانت بعض الخلايا فارغة. الشرط الأساسي فقط هو وجود اسم المستخدم.
+    </div>
+
+    <div class="back">
+        <a class="btn" href="users-index.html">العودة لصفحة المستخدمين</a>
+        <a class="btn" href="index.html">العودة للرئيسية</a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+(function () {
+    var USERS_KEY = 'cityimam-users';
+
+    var columns = [
+        'اسم المستخدم',
+        'كلمة المرور',
+        'تأكيد كلمة المرور',
+        'الرقم الوظيفي',
+        'رقم الباج',
+        'الشعبة',
+        'الوحدة',
+        'الدور'
+    ];
+
+    var templateRow = {
+        'اسم المستخدم': '',
+        'كلمة المرور': '',
+        'تأكيد كلمة المرور': '',
+        'الرقم الوظيفي': '',
+        'رقم الباج': '',
+        'الشعبة': '',
+        'الوحدة': '',
+        'الدور': 'asker'
+    };
+
+    var templateBtn = document.getElementById('templateBtn');
+    var importBtn = document.getElementById('importBtn');
+    var exportBtn = document.getElementById('exportBtn');
+    var fileInput = document.getElementById('fileInput');
+    var status = document.getElementById('status');
+
+    function setStatus(message, type) {
+        status.textContent = message || '';
+        status.className = 'status' + (type ? ' ' + type : '');
+    }
+
+    function readUsers() {
+        var raw = '';
+        try {
+            raw = localStorage.getItem(USERS_KEY) || '';
+        } catch (e) {
+            raw = '';
+        }
+
+        if (!raw) {
+            try {
+                raw = sessionStorage.getItem(USERS_KEY) || '';
+            } catch (e2) {
+                raw = '';
+            }
+        }
+
+        if (!raw) {
+            try {
+                var bag = JSON.parse(window.name || '{}');
+                if (Array.isArray(bag[USERS_KEY])) {
+                    return bag[USERS_KEY];
+                }
+            } catch (e3) {
+                // ignore invalid window.name
+            }
+        }
+
+        try {
+            var parsed = JSON.parse(raw || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e4) {
+            return [];
+        }
+    }
+
+    function saveUsers(users) {
+        var payload = JSON.stringify(users);
+        try {
+            localStorage.setItem(USERS_KEY, payload);
+        } catch (e) {
+            // ignore storage write error
+        }
+
+        try {
+            sessionStorage.setItem(USERS_KEY, payload);
+        } catch (e2) {
+            // ignore storage write error
+        }
+
+        try {
+            var bag = JSON.parse(window.name || '{}');
+            bag[USERS_KEY] = users;
+            window.name = JSON.stringify(bag);
+        } catch (e3) {
+            // ignore window.name write error
+        }
+    }
+
+    function normalizeRole(role) {
+        var value = String(role || '').trim().toLowerCase();
+        if (value === 'admin' || value === 'مسؤول') return 'admin';
+        if (value === 'responder' || value === 'مجيب') return 'responder';
+        return 'asker';
+    }
+
+    function requiredValue(row, key) {
+        var value = row[key];
+        return String(value == null ? '' : value).trim();
+    }
+
+    function normalizeUsername(value) {
+        return String(value == null ? '' : value).trim();
+    }
+
+    function normalizeHeader(text) {
+        return String(text == null ? '' : text)
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .replace(/[\s_\-]+/g, '')
+            .replace(/[أإآ]/g, 'ا')
+            .replace(/ة/g, 'ه')
+            .toLowerCase()
+            .trim();
+    }
+
+    function getCellByAliases(row, aliases) {
+        var keys = Object.keys(row || {});
+        if (!keys.length) return '';
+
+        var normalizedAliases = aliases.map(normalizeHeader);
+        var i;
+        for (i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            if (normalizedAliases.indexOf(normalizeHeader(key)) !== -1) {
+                return String(row[key] == null ? '' : row[key]).trim();
+            }
+        }
+
+        return '';
+    }
+
+    function downloadWorkbook(dataRows, fileName) {
+        var ws = XLSX.utils.json_to_sheet(dataRows, { header: columns });
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Users');
+        XLSX.writeFile(wb, fileName);
+    }
+
+    templateBtn.addEventListener('click', function () {
+        downloadWorkbook([templateRow], 'users-template.xlsx');
+        setStatus('تم تصدير نموذج اكسل بنجاح.', 'ok');
+    });
+
+    exportBtn.addEventListener('click', function () {
+        var users = readUsers();
+        var rows = users.map(function (u) {
+            return {
+                'اسم المستخدم': u.username || '',
+                'كلمة المرور': u.password || '',
+                'تأكيد كلمة المرور': u.confirmPassword || '',
+                'الرقم الوظيفي': u.employeeNumber || '',
+                'رقم الباج': u.badgeNumber || '',
+                'الشعبة': u.division || '',
+                'الوحدة': u.unit || '',
+                'الدور': u.role || 'asker'
+            };
+        });
+
+        if (!rows.length) {
+            rows = [templateRow];
+        }
+
+        downloadWorkbook(rows, 'users-export.xlsx');
+        setStatus('تم تصدير البيانات إلى اكسل.', 'ok');
+    });
+
+    importBtn.addEventListener('click', function () {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', function (event) {
+        var file = event.target.files && event.target.files[0];
+        if (!file) return;
+
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            try {
+                var wb = XLSX.read(e.target.result, { type: 'array' });
+                var sheet = wb.Sheets[wb.SheetNames[0]];
+                var rowsAoa = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+                if (!rowsAoa.length) {
+                    setStatus('الملف فارغ.', 'err');
+                    return;
+                }
+
+                var headerRow = rowsAoa[0] || [];
+                var dataRows = rowsAoa.slice(1);
+
+                if (!dataRows.length) {
+                    setStatus('لا توجد صفوف بيانات بعد صف العناوين.', 'err');
+                    return;
+                }
+
+                var users = readUsers();
+                var added = 0;
+                var updated = 0;
+                var skipped = 0;
+
+                dataRows.forEach(function (cells) {
+                    var row = {};
+                    var i;
+                    for (i = 0; i < headerRow.length; i++) {
+                        row[String(headerRow[i] == null ? '' : headerRow[i]).trim()] = String(cells[i] == null ? '' : cells[i]).trim();
+                    }
+
+                    var username = normalizeUsername(getCellByAliases(row, [
+                        'اسم المستخدم', 'اسم مستحدم', 'اسم مستخدم', 'اسم الحساب', 'المستخدم', 'username', 'user name'
+                    ])) || normalizeUsername(cells[0]);
+                    var password = getCellByAliases(row, ['كلمة المرور', 'كلمه المرور', 'password']) || String(cells[1] == null ? '' : cells[1]).trim();
+                    var confirmPassword = getCellByAliases(row, ['تأكيد كلمة المرور', 'تاكيد كلمة المرور', 'تأكيد المرور', 'confirm password']) || String(cells[2] == null ? '' : cells[2]).trim();
+                    var employeeNumber = getCellByAliases(row, ['الرقم الوظيفي', 'رقم وظيفي', 'employee number']) || String(cells[3] == null ? '' : cells[3]).trim();
+                    var badgeNumber = getCellByAliases(row, ['رقم الباج', 'رقم باج', 'badge number']) || String(cells[4] == null ? '' : cells[4]).trim();
+                    var division = getCellByAliases(row, ['الشعبة', 'شعبه', 'division']) || String(cells[5] == null ? '' : cells[5]).trim();
+                    var unit = getCellByAliases(row, ['الوحدة', 'وحدة', 'unit']) || String(cells[6] == null ? '' : cells[6]).trim();
+                    var role = normalizeRole(getCellByAliases(row, ['الدور', 'role']) || String(cells[7] == null ? '' : cells[7]).trim());
+
+                    // Accept rows with empty cells; username is the only required key.
+                    if (!username) {
+                        skipped += 1;
+                        return;
+                    }
+
+                    if (!password && confirmPassword) {
+                        password = confirmPassword;
+                    } else if (password && !confirmPassword) {
+                        confirmPassword = password;
+                    }
+
+                    var existingIndex = users.findIndex(function (u) {
+                        return String(u.username || '').toLowerCase() === username.toLowerCase();
+                    });
+
+                    if (existingIndex >= 0) {
+                        users[existingIndex].password = password;
+                        users[existingIndex].confirmPassword = confirmPassword;
+                        users[existingIndex].employeeNumber = employeeNumber;
+                        users[existingIndex].badgeNumber = badgeNumber;
+                        users[existingIndex].division = division;
+                        users[existingIndex].unit = unit;
+                        users[existingIndex].role = role;
+                        users[existingIndex].updatedAt = Date.now();
+                        updated += 1;
+                    } else {
+                        users.unshift({
+                            id: 'u-' + Date.now() + '-' + Math.floor(Math.random() * 100000),
+                            username: username,
+                            password: password,
+                            confirmPassword: confirmPassword,
+                            employeeNumber: employeeNumber,
+                            badgeNumber: badgeNumber,
+                            division: division,
+                            unit: unit,
+                            role: role,
+                            createdAt: Date.now(),
+                            updatedAt: Date.now()
+                        });
+                        added += 1;
+                    }
+                });
+
+                saveUsers(users);
+                setStatus('تم الاستيراد بنجاح. مضاف: ' + added + ' | محدث: ' + updated + ' | متجاوز (بدون اسم مستخدم): ' + skipped, 'ok');
+            } catch (error) {
+                setStatus('تعذر قراءة ملف اكسل: ' + (error.message || 'خطأ غير معروف'), 'err');
+            } finally {
+                fileInput.value = '';
+            }
+        };
+
+        reader.readAsArrayBuffer(file);
+    });
+})();
+</script>
+</body>
+</html>

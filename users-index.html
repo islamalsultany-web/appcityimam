@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>المستخدمون</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+
+:root {
+    --bg: #eef3f9;
+    --card: #ffffff;
+    --ink: #0f172a;
+    --soft: #64748b;
+    --line: #d8e0ee;
+    --primary: #0f56d4;
+    --warn: #b91c1c;
+    --ok: #15803d;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Cairo', sans-serif;
+    color: var(--ink);
+    background: radial-gradient(circle at 12% 10%, #f9fbff, #eef3fa 42%, #e5ecf7);
+}
+
+.page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 14px;
+    display: grid;
+    gap: 12px;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.head {
+    padding: 12px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.head h1 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn.primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.btn.warn {
+    border-color: #fecaca;
+    color: var(--warn);
+}
+
+.body {
+    padding: 12px;
+}
+
+.table-wrap {
+    width: 100%;
+    overflow: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 760px;
+}
+
+.table th,
+.table td {
+    border-bottom: 1px solid var(--line);
+    padding: 10px 8px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.table th {
+    background: #f8fbff;
+    font-weight: 800;
+}
+
+.role {
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+}
+
+.muted {
+    color: var(--soft);
+}
+
+.status {
+    color: var(--soft);
+    font-size: 0.9rem;
+}
+
+.status.ok { color: var(--ok); }
+
+.panel {
+    border-top: 1px solid var(--line);
+    padding: 12px;
+    display: none;
+}
+
+.panel.show {
+    display: block;
+}
+
+.deleted-list {
+    display: grid;
+    gap: 8px;
+}
+
+.deleted-item {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 760px) {
+    .page { padding: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+    <div class="card">
+        <div class="head">
+            <h1>إدارة المستخدمين</h1>
+            <div class="actions">
+                <a class="btn" href="index.html">العودة للرئيسية</a>
+                <a class="btn primary" href="users-create.html">إنشاء مستخدم</a>
+                <a class="btn" href="users-excel.html">استيراد/تصدير اكسل</a>
+                <button id="deleteAllBtn" class="btn warn" type="button">حذف الكل</button>
+                <button id="recentDeletedBtn" class="btn warn" type="button">المحذوف مؤخرا</button>
+            </div>
+        </div>
+        <div class="body">
+            <div id="status" class="status">-</div>
+            <div class="table-wrap">
+                <table class="table" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>اسم المستخدم</th>
+                            <th>كلمة المرور</th>
+                            <th>تأكيد كلمة المرور</th>
+                            <th>الرقم الوظيفي</th>
+                            <th>رقم الباج</th>
+                            <th>الشعبة</th>
+                            <th>الوحدة</th>
+                            <th>الدور</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div id="deletedPanel" class="panel">
+            <div class="actions" style="margin-bottom:8px;">
+                <strong>المحذوف مؤخرا</strong>
+                <button id="clearDeletedBtn" class="btn warn" type="button">حذف السجل نهائيا</button>
+            </div>
+            <div id="deletedList" class="deleted-list"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var USERS_KEY = 'cityimam-users';
+    var DELETED_KEY = 'cityimam-users-deleted';
+
+    var usersBody = document.getElementById('usersBody');
+    var status = document.getElementById('status');
+    var deleteAllBtn = document.getElementById('deleteAllBtn');
+    var recentDeletedBtn = document.getElementById('recentDeletedBtn');
+    var deletedPanel = document.getElementById('deletedPanel');
+    var deletedList = document.getElementById('deletedList');
+    var clearDeletedBtn = document.getElementById('clearDeletedBtn');
+
+    function readUsers() {
+        var raw = '';
+        try {
+            raw = localStorage.getItem(USERS_KEY) || '';
+        } catch (e) {
+            raw = '';
+        }
+
+        if (!raw) {
+            try {
+                raw = sessionStorage.getItem(USERS_KEY) || '';
+            } catch (e2) {
+                raw = '';
+            }
+        }
+
+        if (!raw) {
+            try {
+                var bag = JSON.parse(window.name || '{}');
+                if (Array.isArray(bag[USERS_KEY])) {
+                    return bag[USERS_KEY];
+                }
+            } catch (e3) {
+                // ignore invalid window.name
+            }
+        }
+
+        try {
+            var parsed = JSON.parse(raw || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e4) {
+            return [];
+        }
+    }
+
+    function saveUsers(users) {
+        var payload = JSON.stringify(users);
+        try {
+            localStorage.setItem(USERS_KEY, payload);
+        } catch (e) {
+            // ignore storage write error
+        }
+
+        try {
+            sessionStorage.setItem(USERS_KEY, payload);
+        } catch (e2) {
+            // ignore storage write error
+        }
+
+        try {
+            var bag = JSON.parse(window.name || '{}');
+            bag[USERS_KEY] = users;
+            window.name = JSON.stringify(bag);
+        } catch (e3) {
+            // ignore window.name write error
+        }
+    }
+
+    function readDeleted() {
+        try {
+            return JSON.parse(localStorage.getItem(DELETED_KEY) || '[]');
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function saveDeleted(rows) {
+        localStorage.setItem(DELETED_KEY, JSON.stringify(rows));
+    }
+
+    function esc(text) {
+        return String(text || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function roleLabel(role) {
+        if (role === 'responder') return 'مجيب';
+        if (role === 'admin') return 'مسؤول';
+        return 'مستفسر';
+    }
+
+    function renderUsers() {
+        var users = readUsers();
+
+        if (!users.length) {
+            usersBody.innerHTML = '<tr><td colspan="9" class="muted">لا توجد بيانات مستخدمين.</td></tr>';
+            status.textContent = 'عدد المستخدمين: 0';
+            status.className = 'status';
+            return;
+        }
+
+        usersBody.innerHTML = users.map(function (user) {
+            return '' +
+                '<tr>' +
+                '<td>' + esc(user.username) + '</td>' +
+                '<td>' + esc(user.password) + '</td>' +
+                '<td>' + esc(user.confirmPassword) + '</td>' +
+                '<td>' + esc(user.employeeNumber || '') + '</td>' +
+                '<td>' + esc(user.badgeNumber || '') + '</td>' +
+                '<td>' + esc(user.division || '') + '</td>' +
+                '<td>' + esc(user.unit || '') + '</td>' +
+                '<td><span class="role">' + roleLabel(user.role) + '</span></td>' +
+                '<td>' +
+                    '<div class="actions">' +
+                        '<a class="btn" href="users-create.html?mode=view&id=' + encodeURIComponent(user.id) + '">عرض</a>' +
+                        '<a class="btn" href="users-create.html?mode=edit&id=' + encodeURIComponent(user.id) + '">تعديل</a>' +
+                        '<button class="btn warn" type="button" data-action="delete" data-id="' + esc(user.id) + '">حذف</button>' +
+                    '</div>' +
+                '</td>' +
+                '</tr>';
+        }).join('');
+
+        status.textContent = 'عدد المستخدمين: ' + users.length;
+        status.className = 'status ok';
+
+        Array.from(document.querySelectorAll('[data-action="delete"]')).forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = btn.getAttribute('data-id');
+                removeUser(id);
+            });
+        });
+    }
+
+    function renderDeleted() {
+        var rows = readDeleted();
+        if (!rows.length) {
+            deletedList.innerHTML = '<div class="muted">لا يوجد عناصر محذوفة.</div>';
+            return;
+        }
+
+        deletedList.innerHTML = rows.map(function (row) {
+            var when = row.deletedAt ? new Date(row.deletedAt).toLocaleString('ar-IQ') : '-';
+            return '' +
+                '<div class="deleted-item">' +
+                    '<div>' +
+                        '<strong>' + esc(row.username) + '</strong> | ' + esc(roleLabel(row.role)) + ' | ' + esc(row.employeeNumber || '-') +
+                        '<div class="muted">تم الحذف: ' + esc(when) + '</div>' +
+                    '</div>' +
+                    '<button class="btn" type="button" data-action="restore" data-id="' + esc(row.id) + '">استرجاع</button>' +
+                '</div>';
+        }).join('');
+
+        Array.from(document.querySelectorAll('[data-action="restore"]')).forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = btn.getAttribute('data-id');
+                restoreUser(id);
+            });
+        });
+    }
+
+    function removeUser(id) {
+        var users = readUsers();
+        var idx = users.findIndex(function (u) { return u.id === id; });
+        if (idx === -1) return;
+
+        var deleted = readDeleted();
+        var row = users[idx];
+        row.deletedAt = Date.now();
+        deleted.unshift(row);
+        if (deleted.length > 20) {
+            deleted = deleted.slice(0, 20);
+        }
+
+        users.splice(idx, 1);
+        saveUsers(users);
+        saveDeleted(deleted);
+        renderUsers();
+        renderDeleted();
+    }
+
+    function restoreUser(id) {
+        var deleted = readDeleted();
+        var idx = deleted.findIndex(function (u) { return u.id === id; });
+        if (idx === -1) return;
+
+        var users = readUsers();
+        var row = deleted[idx];
+        delete row.deletedAt;
+
+        users.unshift(row);
+        deleted.splice(idx, 1);
+
+        saveUsers(users);
+        saveDeleted(deleted);
+        renderUsers();
+        renderDeleted();
+    }
+
+    recentDeletedBtn.addEventListener('click', function () {
+        deletedPanel.classList.toggle('show');
+        if (deletedPanel.classList.contains('show')) {
+            renderDeleted();
+        }
+    });
+
+    clearDeletedBtn.addEventListener('click', function () {
+        saveDeleted([]);
+        renderDeleted();
+    });
+
+    deleteAllBtn.addEventListener('click', function () {
+        var users = readUsers();
+        if (!users.length) {
+            status.textContent = 'لا توجد بيانات لحذفها.';
+            status.className = 'status';
+            return;
+        }
+
+        var ok = window.confirm('هل أنت متأكد من حذف جميع المستخدمين؟');
+        if (!ok) {
+            return;
+        }
+
+        saveUsers([]);
+        status.textContent = 'تم حذف جميع المستخدمين.';
+        status.className = 'status ok';
+        renderUsers();
+    });
+
+    renderUsers();
+})();
+</script>
+</body>
+</html>

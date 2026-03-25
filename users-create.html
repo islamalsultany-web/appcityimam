@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إنشاء مستخدم</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+
+:root {
+    --bg: #eef3f9;
+    --card: #ffffff;
+    --ink: #0f172a;
+    --soft: #64748b;
+    --line: #d8e0ee;
+    --primary: #0f56d4;
+    --danger: #b91c1c;
+    --ok: #15803d;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Cairo', sans-serif;
+    color: var(--ink);
+    background: radial-gradient(circle at 12% 10%, #f9fbff, #eef3fa 42%, #e5ecf7);
+    display: grid;
+    place-items: center;
+    padding: 14px;
+}
+
+.card {
+    width: min(520px, 100%);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    padding: 14px;
+    display: grid;
+    gap: 10px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+small {
+    color: var(--soft);
+}
+
+.input,
+.select,
+.btn {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: inherit;
+}
+
+.btn {
+    background: #fff;
+    cursor: pointer;
+}
+
+.btn.primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.status {
+    min-height: 20px;
+    color: var(--soft);
+    font-size: 0.9rem;
+}
+
+.status.ok { color: var(--ok); }
+.status.err { color: var(--danger); }
+
+@media (max-width: 560px) {
+    .actions {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+<body>
+<div class="card">
+    <h1 id="title">إنشاء مستخدم</h1>
+    <small id="subtitle">أدخل بيانات المستخدم المطلوبة</small>
+
+    <input id="username" class="input" type="text" placeholder="اسم المستخدم" maxlength="60">
+    <input id="password" class="input" type="text" placeholder="كلمة المرور" maxlength="60">
+    <input id="confirmPassword" class="input" type="text" placeholder="تأكيد كلمة المرور" maxlength="60">
+    <input id="employeeNumber" class="input" type="text" placeholder="الرقم الوظيفي" maxlength="40">
+    <input id="badgeNumber" class="input" type="text" placeholder="رقم الباج" maxlength="40">
+    <input id="division" class="input" type="text" placeholder="الشعبة" maxlength="80">
+    <input id="unit" class="input" type="text" placeholder="الوحدة" maxlength="80">
+
+    <select id="role" class="select">
+        <option value="asker">مستفسر</option>
+        <option value="responder">مجيب</option>
+        <option value="admin">مسؤول</option>
+    </select>
+
+    <button id="saveBtn" class="btn primary" type="button">حفظ</button>
+
+    <div class="actions">
+        <button class="btn" type="button" onclick="window.location.href='users-index.html'">العودة لصفحة المستخدمين</button>
+        <button class="btn" type="button" onclick="window.location.href='index.html'">العودة للرئيسية</button>
+    </div>
+
+    <div id="status" class="status"></div>
+</div>
+
+<script>
+(function () {
+    var USERS_KEY = 'cityimam-users';
+
+    var params = new URLSearchParams(window.location.search);
+    var mode = params.get('mode') || 'create';
+    var userId = params.get('id') || '';
+
+    var title = document.getElementById('title');
+    var subtitle = document.getElementById('subtitle');
+    var username = document.getElementById('username');
+    var password = document.getElementById('password');
+    var confirmPassword = document.getElementById('confirmPassword');
+    var employeeNumber = document.getElementById('employeeNumber');
+    var badgeNumber = document.getElementById('badgeNumber');
+    var division = document.getElementById('division');
+    var unit = document.getElementById('unit');
+    var role = document.getElementById('role');
+    var saveBtn = document.getElementById('saveBtn');
+    var status = document.getElementById('status');
+
+    function readUsers() {
+        var raw = '';
+        try {
+            raw = localStorage.getItem(USERS_KEY) || '';
+        } catch (e) {
+            raw = '';
+        }
+
+        if (!raw) {
+            try {
+                raw = sessionStorage.getItem(USERS_KEY) || '';
+            } catch (e2) {
+                raw = '';
+            }
+        }
+
+        if (!raw) {
+            try {
+                var bag = JSON.parse(window.name || '{}');
+                if (Array.isArray(bag[USERS_KEY])) {
+                    return bag[USERS_KEY];
+                }
+            } catch (e3) {
+                // ignore invalid window.name
+            }
+        }
+
+        try {
+            var parsed = JSON.parse(raw || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e4) {
+            return [];
+        }
+    }
+
+    function saveUsers(users) {
+        var payload = JSON.stringify(users);
+        try {
+            localStorage.setItem(USERS_KEY, payload);
+        } catch (e) {
+            // ignore storage write error
+        }
+
+        try {
+            sessionStorage.setItem(USERS_KEY, payload);
+        } catch (e2) {
+            // ignore storage write error
+        }
+
+        try {
+            var bag = JSON.parse(window.name || '{}');
+            bag[USERS_KEY] = users;
+            window.name = JSON.stringify(bag);
+        } catch (e3) {
+            // ignore window.name write error
+        }
+    }
+
+    function normalizeUsername(value) {
+        return String(value == null ? '' : value).trim();
+    }
+
+    function setStatus(message, isError) {
+        status.textContent = message || '';
+        status.className = 'status' + (isError ? ' err' : ' ok');
+    }
+
+    function setReadOnly(readOnly) {
+        username.readOnly = readOnly;
+        password.readOnly = readOnly;
+        confirmPassword.readOnly = readOnly;
+        employeeNumber.readOnly = readOnly;
+        badgeNumber.readOnly = readOnly;
+        division.readOnly = readOnly;
+        unit.readOnly = readOnly;
+        role.disabled = readOnly;
+        saveBtn.style.display = readOnly ? 'none' : 'block';
+    }
+
+    function fillForm(user) {
+        username.value = user.username || '';
+        password.value = user.password || '';
+        confirmPassword.value = user.confirmPassword || '';
+        employeeNumber.value = user.employeeNumber || '';
+        badgeNumber.value = user.badgeNumber || '';
+        division.value = user.division || '';
+        unit.value = user.unit || '';
+        role.value = user.role || 'asker';
+    }
+
+    function loadCurrent() {
+        if (!userId) {
+            if (mode === 'create') {
+                return;
+            }
+            setStatus('لم يتم تحديد المستخدم.', true);
+            setReadOnly(true);
+            return;
+        }
+
+        var users = readUsers();
+        var current = users.find(function (u) { return u.id === userId; });
+
+        if (!current) {
+            setStatus('المستخدم غير موجود.', true);
+            setReadOnly(true);
+            return;
+        }
+
+        fillForm(current);
+
+        if (mode === 'view') {
+            title.textContent = 'عرض المستخدم';
+            subtitle.textContent = 'بيانات المستخدم للقراءة فقط';
+            setReadOnly(true);
+            return;
+        }
+
+        if (mode === 'edit') {
+            title.textContent = 'تعديل المستخدم';
+            subtitle.textContent = 'عدّل البيانات ثم احفظ';
+            setReadOnly(false);
+        }
+    }
+
+    function save() {
+        var usernameValue = normalizeUsername(username.value);
+        var passwordValue = password.value.trim();
+        var confirmValue = confirmPassword.value.trim();
+        var employeeNumberValue = employeeNumber.value.trim();
+        var badgeNumberValue = badgeNumber.value.trim();
+        var divisionValue = division.value.trim();
+        var unitValue = unit.value.trim();
+        var roleValue = role.value;
+
+        if (!usernameValue) {
+            setStatus('اسم المستخدم مطلوب.', true);
+            return;
+        }
+
+        if (!passwordValue && confirmValue) {
+            passwordValue = confirmValue;
+        } else if (passwordValue && !confirmValue) {
+            confirmValue = passwordValue;
+        }
+
+        if (passwordValue !== confirmValue) {
+            setStatus('كلمة المرور وتأكيدها غير متطابقين.', true);
+            return;
+        }
+
+        var users = readUsers();
+
+        var duplicate = users.find(function (u) {
+            var currentName = normalizeUsername(u.username);
+            return currentName.toLowerCase() === usernameValue.toLowerCase() && u.id !== userId;
+        });
+        if (duplicate) {
+            setStatus('اسم المستخدم موجود مسبقا.', true);
+            return;
+        }
+
+        if (mode === 'edit' && userId) {
+            var idx = users.findIndex(function (u) { return u.id === userId; });
+            if (idx === -1) {
+                setStatus('المستخدم غير موجود.', true);
+                return;
+            }
+            users[idx].username = usernameValue;
+            users[idx].password = passwordValue;
+            users[idx].confirmPassword = confirmValue;
+            users[idx].employeeNumber = employeeNumberValue;
+            users[idx].badgeNumber = badgeNumberValue;
+            users[idx].division = divisionValue;
+            users[idx].unit = unitValue;
+            users[idx].role = roleValue;
+            users[idx].updatedAt = Date.now();
+            saveUsers(users);
+            setStatus('تم تحديث المستخدم بنجاح.', false);
+            return;
+        }
+
+        var newUser = {
+            id: 'u-' + Date.now() + '-' + Math.floor(Math.random() * 100000),
+            username: usernameValue,
+            password: passwordValue,
+            confirmPassword: confirmValue,
+            employeeNumber: employeeNumberValue,
+            badgeNumber: badgeNumberValue,
+            division: divisionValue,
+            unit: unitValue,
+            role: roleValue,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+
+        users.unshift(newUser);
+        saveUsers(users);
+        setStatus('تم إنشاء المستخدم بنجاح.', false);
+
+        username.value = '';
+        password.value = '';
+        confirmPassword.value = '';
+        employeeNumber.value = '';
+        badgeNumber.value = '';
+        division.value = '';
+        unit.value = '';
+        role.value = 'asker';
+    }
+
+    if (mode === 'view' || mode === 'edit') {
+        loadCurrent();
+    }
+
+    saveBtn.addEventListener('click', save);
+})();
+</script>
+</body>
+</html>
