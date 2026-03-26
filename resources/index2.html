@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مدينة الامام الحسين (عليه السلام) للزائرين</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+
+:root {
+    --surface: rgba(245, 245, 245, 0.92);
+    --surface-strong: rgba(238, 238, 238, 0.95);
+    --ink: #0f172a;
+    --soft: #5f6674;
+    --accent: #f3c542;
+    --accent-2: #e24a3b;
+    --stroke: rgba(15, 23, 42, 0.12);
+    --card-radius: 18px;
+    --shadow: 0 14px 30px rgba(16, 24, 40, 0.2);
+}
+
+body.dark {
+    --surface: rgba(28, 32, 43, 0.9);
+    --surface-strong: rgba(34, 40, 54, 0.92);
+    --ink: #e8edf7;
+    --soft: #b8c1d5;
+    --stroke: rgba(255, 255, 255, 0.12);
+    --shadow: 0 16px 28px rgba(0, 0, 0, 0.35);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Cairo', sans-serif;
+    color: var(--ink);
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.56), rgba(0, 0, 0, 0.58)),
+        url('https://images.unsplash.com/photo-1603451731239-0ee2f0865dc2?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat fixed;
+}
+
+.topbar {
+    min-height: 96px;
+    background: rgba(246, 246, 246, 0.96);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    display: grid;
+    grid-template-columns: minmax(210px, auto) minmax(260px, 1fr) auto;
+    align-items: center;
+    gap: 18px;
+    padding: 10px 18px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+    flex-wrap: nowrap;
+    justify-content: center;
+}
+
+.brand .logo-wrap {
+    order: 1;
+}
+
+.brand .title-wrap {
+    order: 2;
+}
+
+.brand .header-image-wrap {
+    order: 3;
+}
+
+.logo-wrap {
+    width: clamp(90px, 8vw, 128px);
+    height: clamp(42px, 4vw, 58px);
+    overflow: hidden;
+    flex: 0 0 auto;
+}
+
+.logo-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.title-wrap {
+    height: clamp(34px, 4vw, 48px);
+    width: clamp(180px, 28vw, 355px);
+    overflow: hidden;
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
+.title-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.search {
+    max-width: 460px;
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    min-width: 160px;
+}
+
+.search input {
+    width: 100%;
+    border-radius: 999px;
+    border: 1px solid #f29ab7;
+    background: #f4f4f4;
+    padding: 11px 42px 11px 42px;
+    font-family: inherit;
+    font-size: 0.95rem;
+}
+
+.search-clear {
+    position: absolute;
+    inset-inline-end: 10px;
+    top: 8px;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #7b8392;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.search-clear:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.search-clear.hidden {
+    display: none;
+}
+
+.search input:focus {
+    outline: 2px solid rgba(242, 154, 183, 0.5);
+}
+
+.search::before {
+    content: '⌕';
+    position: absolute;
+    inset-inline-start: 15px;
+    top: 7px;
+    color: #a3a3a3;
+    font-size: 1.2rem;
+}
+
+.center-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+}
+
+.header-image-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 88px;
+    flex: 0 0 auto;
+}
+
+.header-image {
+    width: clamp(52px, 7vw, 112px);
+    height: clamp(52px, 7vw, 72px);
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    
+}
+
+.top-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.top-actions button {
+    border: 0;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 8px 11px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 208px 1fr;
+    gap: 12px;
+    padding: 12px;
+}
+
+.layout.sidebar-collapsed {
+    grid-template-columns: 1fr;
+}
+
+.layout.sidebar-collapsed .side {
+    display: none;
+}
+
+.layout.sidebar-collapsed .main {
+    grid-template-columns: repeat(3, minmax(240px, 320px));
+}
+
+.side {
+    display: grid;
+    gap: 10px;
+}
+
+.side-card {
+    border-radius: var(--card-radius);
+    background: var(--surface);
+    border: 1px solid var(--stroke);
+    box-shadow: var(--shadow);
+    padding: 16px 14px;
+    min-height: 150px;
+}
+
+.calendar-mini {
+    text-align: center;
+    min-height: 226px;
+}
+
+.calendar-mini h4 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    font-size: 0.76rem;
+    color: #253040;
+}
+
+.calendar-grid span {
+    background: rgba(255, 255, 255, 0.65);
+    border-radius: 7px;
+    padding: 4px 0;
+}
+
+.calendar-grid .empty {
+    background: transparent;
+}
+
+.calendar-grid .today {
+    background: #f3c542;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.clock {
+    text-align: center;
+    min-height: 170px;
+    display: grid;
+    place-content: center;
+    gap: 4px;
+}
+
+#time {
+    font-size: 2rem;
+    font-weight: 800;
+}
+
+.weather {
+    display: grid;
+    gap: 8px;
+    align-content: center;
+    min-height: 150px;
+}
+
+.weather strong {
+    font-size: 2rem;
+}
+
+.weather small {
+    color: var(--soft);
+}
+
+.main {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+    grid-template-columns: repeat(3, minmax(220px, 300px));
+    justify-content: center;
+}
+
+.app-card {
+    border: 1px solid var(--stroke);
+    border-radius: var(--card-radius);
+    background: var(--surface-strong);
+    min-height: 180px;
+    box-shadow: var(--shadow);
+    text-decoration: none;
+    color: inherit;
+    padding: 12px;
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: 10px;
+    transition: transform 180ms ease, border-color 180ms ease;
+    position: relative;
+}
+
+.app-card.dragging {
+    opacity: 0.6;
+    transform: scale(0.98);
+}
+
+.app-card.hidden {
+    display: none;
+}
+
+.app-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(243, 197, 66, 0.9);
+}
+
+.app-card h3 {
+    margin: 0;
+    text-align: center;
+    font-size: 1.15rem;
+    min-height: 52px;
+}
+
+.app-card mark {
+    background: rgba(243, 197, 66, 0.45);
+    color: inherit;
+    border-radius: 4px;
+    padding: 0 2px;
+}
+
+.no-results {
+    display: none;
+    grid-column: 1 / -1;
+    text-align: center;
+    background: var(--surface);
+    border: 1px dashed var(--stroke);
+    border-radius: var(--card-radius);
+    padding: 18px;
+    color: var(--soft);
+}
+
+.no-results.show {
+    display: block;
+}
+
+.toast-wrap {
+    position: fixed;
+    bottom: 14px;
+    inset-inline-end: 14px;
+    display: grid;
+    gap: 8px;
+    z-index: 999;
+}
+
+.toast {
+    background: rgba(17, 24, 39, 0.94);
+    color: #f8fafc;
+    border-radius: 12px;
+    padding: 10px 14px;
+    min-width: 210px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+    animation: toastIn 220ms ease-out;
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.icon {
+    width: 94px;
+    height: 94px;
+    border-radius: 26px;
+    display: grid;
+    place-items: center;
+    font-size: 2.8rem;
+    color: white;
+    background: linear-gradient(145deg, #1692ff, #0f56d4);
+}
+
+.icon svg {
+    width: 48px;
+    height: 48px;
+    stroke: #ffffff;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.icon.gold {
+    background: linear-gradient(145deg, #f0b429, #c6820b);
+}
+
+.icon.red {
+    background: linear-gradient(145deg, #ef4444, #b91c1c);
+}
+
+.icon.cyan {
+    background: linear-gradient(145deg, #06b6d4, #0e7490);
+}
+
+.section-title {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-top: 12px;
+    margin-bottom: 16px;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--accent);
+    position: relative;
+    padding: 8px 0;
+    letter-spacing: 0.5px;
+}
+
+.section-title::before {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    border-radius: 2px;
+}
+
+@media (max-width: 1280px) {
+    .main {
+        grid-template-columns: repeat(3, minmax(200px, 280px));
+    }
+}
+
+/* ── Tablet Landscape (≤ 1024px) ── */
+@media (max-width: 1024px) {
+    .topbar {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        padding: 10px 14px;
+        gap: 10px;
+    }
+
+    .brand {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        justify-content: center;
+    }
+
+    .top-actions {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        gap: 6px;
+        justify-content: center;
+    }
+
+    .center-group {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        justify-content: center;
+    }
+
+    .search {
+        margin: 0;
+        max-width: 620px;
+    }
+}
+
+/* ── Tablet Portrait (≤ 900px) ── */
+@media (max-width: 900px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+
+    .side {
+        grid-template-columns: repeat(3, minmax(130px, 1fr));
+    }
+
+    .main {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+    }
+
+    .title-wrap {
+        width: min(52vw, 320px);
+    }
+}
+
+/* ── Mobile (≤ 600px) ── */
+@media (max-width: 600px) {
+    .topbar {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        gap: 8px;
+        padding: 8px 12px;
+    }
+
+    .brand {
+        grid-column: 1;
+        grid-row: 1;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .logo-wrap {
+        width: 52px;
+        height: 52px;
+        flex: 0 0 52px;
+    }
+
+    .title-wrap {
+        flex: 1;
+        width: auto;
+        height: 42px;
+        max-width: calc(100vw - 98px);
+    }
+
+    .title-image {
+        object-position: right center;
+    }
+
+    .center-group {
+        grid-column: 1;
+        grid-row: 2;
+        justify-content: center;
+        align-items: center;
+        gap: 0;
+    }
+
+    .search {
+        flex: 1;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .top-actions {
+        grid-column: 1;
+        grid-row: 3;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .top-actions button {
+        font-size: 0.78rem;
+        padding: 6px 10px;
+    }
+
+    .layout {
+        padding: 8px;
+        gap: 8px;
+    }
+
+    .side {
+        grid-template-columns: 1fr;
+    }
+
+    .main {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .section-title {
+        font-size: 1.3rem;
+    }
+
+    .icon {
+        width: 72px;
+        height: 72px;
+        font-size: 2.2rem;
+        border-radius: 20px;
+    }
+
+    .icon svg {
+        width: 36px;
+        height: 36px;
+    }
+
+    .app-card h3 {
+        font-size: 0.95rem;
+        min-height: 40px;
+    }
+
+    .app-card {
+        min-height: 140px;
+        padding: 10px 8px;
+    }
+}
+
+/* ── Tiny Mobile (≤ 420px) ── */
+@media (max-width: 420px) {
+    .logo-wrap {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+    }
+
+    .title-wrap {
+        height: 36px;
+        max-width: calc(100vw - 86px);
+    }
+
+    .top-actions button {
+        font-size: 0.72rem;
+        padding: 5px 7px;
+    }
+
+    .main {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Touch Fallback: mobile in desktop-site mode ── */
+@media (hover: none) and (pointer: coarse) and (max-width: 1200px) {
+    .topbar {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+    }
+
+    .brand,
+    .center-group,
+    .top-actions {
+        grid-column: 1;
+    }
+
+    .brand {
+        grid-row: 1;
+        justify-content: center;
+    }
+
+    .center-group {
+        grid-row: 2;
+    }
+
+    .top-actions {
+        grid-row: 3;
+        justify-content: center;
+    }
+
+    .search {
+        min-width: 0;
+    }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+    <div class="brand">
+        <div class="logo-wrap" title="شعار مدينة الامام الحسين">
+            <img class="logo-image" src="brand-logo-clean.png" alt="شعار مدينة الامام الحسين" onerror="this.style.display='none';">
+        </div>
+        <div class="title-wrap" title="مدينة الامام الحسين (عليه السلام) للزائرين">
+            <img class="title-image" src="brand-title-clean.png" alt="مدينة الامام الحسين (عليه السلام) للزائرين" onerror="this.style.display='none';">
+        </div>
+        <div class="header-image-wrap">
+            <img src="a.jpg" alt="صورة تزيينية" class="header-image">
+        </div>
+    </div>
+ <div class="center-group">
+        <div class="search">
+            <input id="appSearch" type="text" placeholder="ابحث عن برنامج..." aria-label="بحث عن برنامج">
+            <button id="clearSearch" class="search-clear hidden" type="button" aria-label="مسح البحث">✕</button>
+        </div>
+    </div>
+
+   
+
+    <div class="top-actions">
+        <button id="sidebarToggle" type="button" aria-label="إخفاء أو إظهار العمود الجانبي">إخفاء العمود</button>
+        <button id="resetOrder" type="button" aria-label="إعادة ترتيب البرامج">إعادة الترتيب</button>
+        <button id="themeToggle" type="button" aria-label="تبديل الوضع">الوضع الداكن</button>
+        <button type="button" onclick="window.location.href='/login'">تسجيل الدخول</button>
+        <button type="button" onclick="window.location.href='/logout-home'">تسجيل خروج</button>
+    </div>
+</header>
+
+<section class="layout">
+    <aside class="side">
+        <div class="side-card calendar-mini">
+            <h4 id="monthLabel">-</h4>
+            <div id="calendarGrid" class="calendar-grid"></div>
+        </div>
+
+        <div class="side-card clock">
+            <div>(GMT+3)</div>
+            <div id="time">--:--</div>
+            <div id="date">-</div>
+        </div>
+
+        <div class="side-card weather">
+            <div>كربلاء</div>
+            <strong id="tempNow">--C</strong>
+            <div id="tempRange">--C - --C</div>
+            <small id="weatherState">جاري تحديث الطقس...</small>
+        </div>
+    </aside>
+
+    <main class="main">
+        <h2 class="section-title">بوابة المنتسب الرقمية</h2>
+        <a class="app-card" data-id="hr" data-title="برنامج الموارد البشرية" href="https://hr.cityimam.com/" target="_blank" rel="noopener noreferrer" draggable="true">
+            <h3>برنامج الموارد البشرية</h3>
+            <div class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <rect x="4" y="3" width="16" height="18" rx="2"></rect>
+                    <path d="M8 8h8"></path>
+                    <path d="M8 12h8"></path>
+                    <path d="M8 16h5"></path>
+                </svg>
+            </div>
+        </a>
+
+        <a class="app-card" data-id="mony" data-title="برنامج الحسابات" href="https://mony.cityimam.com/" target="_blank" rel="noopener noreferrer" draggable="true">
+            <h3>برنامج الحسابات</h3>
+            <div class="icon gold" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M9 10.5c0-1.1.9-2 2-2h2"></path>
+                    <path d="M15 10.5c0 1.1-.9 2-2 2h-2"></path>
+                    <path d="M12 7v10"></path>
+                </svg>
+            </div>
+        </a>
+
+        <a class="app-card" data-id="asset" data-title="برنامج الموجودات الثابتة" href="https://assetcity.cityimam.com/" target="_blank" rel="noopener noreferrer" draggable="true">
+            <h3>برنامج الموجودات الثابتة</h3>
+            <div class="icon cyan" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 3v12"></path>
+                    <path d="M8 11l4 4 4-4"></path>
+                    <rect x="4" y="18" width="16" height="3" rx="1"></rect>
+                </svg>
+            </div>
+        </a>
+
+        <a class="app-card" data-id="support" data-title="الاستفسار والدعم" href="/login" draggable="true">
+            <h3>الاستفسار والدعم</h3>
+            <div class="icon red" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4V6z"></path>
+                    <path d="M8 9h8"></path>
+                    <path d="M8 12h5"></path>
+                </svg>
+            </div>
+        </a>
+        <div id="noResults" class="no-results">لا توجد نتائج مطابقة للبحث</div>
+    </main>
+</section>
+<div id="toastWrap" class="toast-wrap" aria-live="polite"></div>
+<script>
+function updateClock() {
+    var now = new Date();
+    var time = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    var date = now.toLocaleDateString('ar-IQ', { weekday: 'long', day: 'numeric', month: 'long' });
+    document.getElementById('time').textContent = time;
+    document.getElementById('date').textContent = date;
+}
+
+function renderCalendar() {
+    var now = new Date();
+    var year = now.getFullYear();
+    var month = now.getMonth();
+    var today = now.getDate();
+    var first = new Date(year, month, 1).getDay();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var grid = document.getElementById('calendarGrid');
+    var monthLabel = document.getElementById('monthLabel');
+
+    monthLabel.textContent = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    grid.innerHTML = '';
+
+    var i;
+    for (i = 0; i < first; i++) {
+        var empty = document.createElement('span');
+        empty.className = 'empty';
+        grid.appendChild(empty);
+    }
+
+    for (i = 1; i <= daysInMonth; i++) {
+        var day = document.createElement('span');
+        day.textContent = i;
+        if (i === today) {
+            day.classList.add('today');
+        }
+        grid.appendChild(day);
+    }
+}
+
+async function updateWeather() {
+    var tempNow = document.getElementById('tempNow');
+    var tempRange = document.getElementById('tempRange');
+    var weatherState = document.getElementById('weatherState');
+    try {
+        var url = 'https://api.open-meteo.com/v1/forecast?latitude=32.6149&longitude=44.0249&current=temperature_2m&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FBaghdad';
+        var response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Weather request failed');
+        }
+        var data = await response.json();
+        var nowTemp = Math.round(data.current.temperature_2m);
+        var max = Math.round(data.daily.temperature_2m_max[0]);
+        var min = Math.round(data.daily.temperature_2m_min[0]);
+        tempNow.textContent = nowTemp + 'C';
+        tempRange.textContent = min + 'C - ' + max + 'C';
+        weatherState.textContent = 'تم تحديث البيانات';
+    } catch (error) {
+        weatherState.textContent = 'تعذر تحديث الطقس';
+    }
+}
+
+function setupSearch() {
+    var input = document.getElementById('appSearch');
+    var clearButton = document.getElementById('clearSearch');
+    var noResults = document.getElementById('noResults');
+    var cards = Array.from(document.querySelectorAll('.app-card'));
+    var titleCache = cards.map(function (card) {
+        var titleElement = card.querySelector('h3');
+        var title = card.getAttribute('data-title') || '';
+        titleElement.textContent = title;
+        return { card: card, titleElement: titleElement, title: title };
+    });
+
+    function escapeRegex(text) {
+        return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function highlightText(text, query) {
+        if (!query) {
+            return text;
+        }
+        var safeQuery = escapeRegex(query);
+        var regex = new RegExp('(' + safeQuery + ')', 'g');
+        return text.replace(regex, '<mark>$1</mark>');
+    }
+
+    function applyFilter() {
+        var query = input.value.trim();
+        var visibleCount = 0;
+
+        clearButton.classList.toggle('hidden', query.length === 0);
+
+        titleCache.forEach(function (item) {
+            var visible = item.title.indexOf(query) !== -1;
+            item.card.classList.toggle('hidden', !visible);
+            item.titleElement.innerHTML = highlightText(item.title, query);
+            if (visible) {
+                visibleCount += 1;
+            }
+        });
+
+        noResults.classList.toggle('show', visibleCount === 0);
+    }
+
+    input.addEventListener('input', function () {
+        applyFilter();
+    });
+
+    clearButton.addEventListener('click', function () {
+        input.value = '';
+        applyFilter();
+        input.focus();
+    });
+
+    applyFilter();
+}
+
+function setupThemeToggle() {
+    var toggle = document.getElementById('themeToggle');
+    var storageKey = 'cityimam-theme';
+    var savedTheme = localStorage.getItem(storageKey);
+
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark');
+    }
+
+    function refreshLabel() {
+        var isDark = document.body.classList.contains('dark');
+        toggle.textContent = isDark ? 'الوضع الفاتح' : 'الوضع الداكن';
+    }
+
+    toggle.addEventListener('click', function () {
+        document.body.classList.toggle('dark');
+        localStorage.setItem(storageKey, document.body.classList.contains('dark') ? 'dark' : 'light');
+        refreshLabel();
+        showToast(document.body.classList.contains('dark') ? 'تم تفعيل الوضع الداكن' : 'تم تفعيل الوضع الفاتح');
+    });
+
+    refreshLabel();
+}
+
+function showToast(message) {
+    var wrap = document.getElementById('toastWrap');
+    var toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    wrap.appendChild(toast);
+    setTimeout(function () {
+        toast.remove();
+    }, 2200);
+}
+
+function setupCardToasts() {
+    var cards = document.querySelectorAll('.app-card');
+    cards.forEach(function (card) {
+        card.addEventListener('click', function () {
+            var title = card.getAttribute('data-title') || 'البرنامج';
+            showToast('جاري فتح ' + title);
+        });
+    });
+}
+
+function setupCardOrdering() {
+    var main = document.querySelector('.main');
+    var storageKey = 'cityimam-card-order';
+    var defaultOrder = ['hr', 'mony', 'asset'];
+    var draggedCard = null;
+
+    function getCards() {
+        return Array.from(main.querySelectorAll('.app-card'));
+    }
+
+    function saveOrder() {
+        var order = getCards().map(function (card) {
+            return card.getAttribute('data-id');
+        });
+        localStorage.setItem(storageKey, JSON.stringify(order));
+    }
+
+    function restoreOrder() {
+        var saved = localStorage.getItem(storageKey);
+        if (!saved) {
+            return;
+        }
+
+        try {
+            var ids = JSON.parse(saved);
+            ids.forEach(function (id) {
+                var card = main.querySelector('.app-card[data-id="' + id + '"]');
+                if (card) {
+                    main.insertBefore(card, document.getElementById('noResults'));
+                }
+            });
+        } catch (error) {
+            localStorage.removeItem(storageKey);
+        }
+    }
+
+    function applyOrder(ids) {
+        ids.forEach(function (id) {
+            var card = main.querySelector('.app-card[data-id="' + id + '"]');
+            if (card) {
+                main.insertBefore(card, document.getElementById('noResults'));
+            }
+        });
+    }
+
+    function insertBeforeTarget(target, event) {
+        if (!draggedCard || !target || draggedCard === target) {
+            return;
+        }
+
+        var targetRect = target.getBoundingClientRect();
+        var targetMiddle = targetRect.left + (targetRect.width / 2);
+        var before = event.clientX < targetMiddle;
+
+        if (before) {
+            main.insertBefore(draggedCard, target);
+        } else {
+            main.insertBefore(draggedCard, target.nextSibling);
+        }
+    }
+
+    getCards().forEach(function (card) {
+        card.addEventListener('dragstart', function (event) {
+            draggedCard = card;
+            card.classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', card.getAttribute('data-id'));
+        });
+
+        card.addEventListener('dragend', function () {
+            card.classList.remove('dragging');
+            draggedCard = null;
+            saveOrder();
+            showToast('تم حفظ ترتيب البرامج');
+        });
+
+        card.addEventListener('dragover', function (event) {
+            event.preventDefault();
+            insertBeforeTarget(card, event);
+        });
+
+        card.addEventListener('drop', function (event) {
+            event.preventDefault();
+            insertBeforeTarget(card, event);
+        });
+    });
+
+    restoreOrder();
+
+    var resetButton = document.getElementById('resetOrder');
+    resetButton.addEventListener('click', function () {
+        localStorage.removeItem(storageKey);
+        applyOrder(defaultOrder);
+        showToast('تمت إعادة الترتيب الافتراضي');
+    });
+}
+
+function setupSidebarToggle() {
+    var layout = document.querySelector('.layout');
+    var toggle = document.getElementById('sidebarToggle');
+    var storageKey = 'cityimam-sidebar-hidden';
+    var saved = localStorage.getItem(storageKey);
+
+    function applyState(collapsed) {
+        layout.classList.toggle('sidebar-collapsed', collapsed);
+        toggle.textContent = collapsed ? 'إظهار العمود' : 'إخفاء العمود';
+    }
+
+    if (saved === null) {
+        applyState(window.innerWidth <= 560);
+    } else {
+        applyState(saved === 'true');
+    }
+
+    toggle.addEventListener('click', function () {
+        var collapsed = !layout.classList.contains('sidebar-collapsed');
+        applyState(collapsed);
+        localStorage.setItem(storageKey, String(collapsed));
+        showToast(collapsed ? 'تم إخفاء العمود الجانبي' : 'تم إظهار العمود الجانبي');
+    });
+}
+
+updateClock();
+renderCalendar();
+updateWeather();
+setupSearch();
+setupThemeToggle();
+setupCardToasts();
+setupCardOrdering();
+setupSidebarToggle();
+setInterval(updateClock, 1000);
+setInterval(updateWeather, 300000);
+</script>
+</body>
+</html>

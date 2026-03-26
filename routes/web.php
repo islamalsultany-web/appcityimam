@@ -11,7 +11,8 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/logout-home', [AuthController::class, 'logoutHome'])->name('logout.home');
 
-Route::get('/', fn () => response()->file(base_path('index.html')))->name('home');
+Route::view('/index2', 'index2')->name('index2');
+Route::redirect('/', '/index2')->name('home');
 
 Route::middleware('app.auth')->group(function (): void {
 	Route::get('/user/info', [AuthController::class, 'userInfo'])->name('user.info');
