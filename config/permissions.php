@@ -74,6 +74,7 @@ return [
             'display_name' => 'مستفسر',
             'permissions' => [
                 'inquiries.asker.view',
+                'inquiries.asker.create_page',
                 'inquiries.asker.create',
             ],
         ],
