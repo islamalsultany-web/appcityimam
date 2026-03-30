@@ -82,13 +82,8 @@ class AuthController extends Controller
         }
 
         $data = $request->validate([
-            'current_password' => ['required', 'string'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
         ]);
-
-        if (! Hash::check($data['current_password'], $user->password)) {
-            return back()->withErrors(['current_password' => 'كلمة المرور الحالية غير صحيحة.']);
-        }
 
         $user->password = Hash::make($data['password']);
         $user->password_confirmation = $data['password'];

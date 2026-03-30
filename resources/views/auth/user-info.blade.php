@@ -38,11 +38,6 @@
         @csrf
 
         <div class="field">
-            <label for="current_password">كلمة المرور الحالية</label>
-            <input id="current_password" name="current_password" type="password" required>
-        </div>
-
-        <div class="field">
             <label for="password">كلمة المرور الجديدة</label>
             <input id="password" name="password" type="password" required>
         </div>
