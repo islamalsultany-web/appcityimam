@@ -36,7 +36,7 @@ class PermissionSystemSeeder extends Seeder
         }
 
         AppUser::query()->each(function (AppUser $user): void {
-            if (in_array($user->role, ['admin', 'asker', 'responder'], true)) {
+            if (in_array($user->role, ['admin', 'asker', 'responder', 'reviewer'], true)) {
                 $user->syncRoles([$user->role]);
             }
         });

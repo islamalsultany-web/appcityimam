@@ -5,7 +5,7 @@
 
 @section('header-actions')
     <a class="btn" href="{{ route('responder.inquiries.deleted') }}">المحذوف مؤخرا</a>
-    <a class="btn" href="{{ route('responder.inquiries.report.print', request()->only(['status', 'id', 'asker', 'title', 'priority', 'date_from', 'date_to'])) }}" target="_blank">طباعة تقرير</a>
+    <a class="btn" href="{{ route('responder.inquiries.report.print', request()->only(['status', 'id', 'asker', 'title', 'priority', 'type', 'date_from', 'date_to'])) }}" target="_blank">طباعة تقرير</a>
     <button class="btn" id="toggleColumnsBtn" type="button">تحديد أعمدة</button>
 @endsection
 
@@ -30,6 +30,14 @@
         'urgent' => 'مستعجلة',
         'very_urgent' => 'عاجلة جدا',
     ])
+    @php($typeLabels = [
+        'financial' => 'مالي',
+        'administrative' => 'إداري',
+        'technical' => 'تقني',
+        'warehouse' => 'مخزني',
+        'other' => 'أخرى',
+    ])
+    @php($reviewStatusLabels = \App\Models\Inquiry::REVIEW_STATUS_LABELS)
 
     <style>
         .stats-grid {
@@ -109,7 +117,7 @@
         }
     </style>
 
-    @php($searchParams = request()->only(['id', 'asker', 'title', 'priority', 'date_from', 'date_to']))
+    @php($searchParams = request()->only(['id', 'asker', 'title', 'priority', 'type', 'date_from', 'date_to']))
 
     <p class="muted" style="margin-top: 0;">
         هذه الصفحة تعرض جميع الاستفسارات المرسلة من المستفسرين. اضغط "إجابة" لفتح صفحة الرد.
@@ -142,6 +150,18 @@
                 <option value="normal" @selected(($search['priority'] ?? null) === 'normal')>عادية</option>
                 <option value="urgent" @selected(($search['priority'] ?? null) === 'urgent')>مستعجلة</option>
                 <option value="very_urgent" @selected(($search['priority'] ?? null) === 'very_urgent')>عاجلة جدا</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="search_type">نوع الاستفسار</label>
+            <select id="search_type" name="type">
+                <option value="">الكل</option>
+                <option value="financial" @selected(($search['type'] ?? null) === 'financial')>مالي</option>
+                <option value="administrative" @selected(($search['type'] ?? null) === 'administrative')>إداري</option>
+                <option value="technical" @selected(($search['type'] ?? null) === 'technical')>تقني</option>
+                <option value="warehouse" @selected(($search['type'] ?? null) === 'warehouse')>مخزني</option>
+                <option value="other" @selected(($search['type'] ?? null) === 'other')>أخرى</option>
             </select>
         </div>
 
@@ -197,8 +217,10 @@
         <label><input type="checkbox" data-col="col-id" checked> رقم</label>
         <label><input type="checkbox" data-col="col-asker" checked> المستفسر</label>
         <label><input type="checkbox" data-col="col-title" checked> عنوان الاستفسار</label>
+        <label><input type="checkbox" data-col="col-type" checked> نوع الاستفسار</label>
         <label><input type="checkbox" data-col="col-priority" checked> الأولوية</label>
         <label><input type="checkbox" data-col="col-status" checked> الحالة</label>
+        <label><input type="checkbox" data-col="col-review" checked> حالة التدقيق</label>
         <label><input type="checkbox" data-col="col-date" checked> تاريخ الإرسال</label>
         <label><input type="checkbox" data-col="col-actions" checked> إجراء</label>
     </div>
@@ -210,8 +232,10 @@
                     <th class="col-id">#</th>
                     <th class="col-asker">المستفسر</th>
                     <th class="col-title">عنوان الاستفسار</th>
+                    <th class="col-type">نوع الاستفسار</th>
                     <th class="col-priority">الأولوية</th>
                     <th class="col-status">الحالة</th>
+                    <th class="col-review">حالة التدقيق</th>
                     <th class="col-date">تاريخ الإرسال</th>
                     <th class="col-actions">إجراء</th>
                 </tr>
@@ -222,8 +246,10 @@
                         <td class="col-id">{{ $inquiry->id }}</td>
                         <td class="col-asker">{{ $inquiry->asker?->username ?? '-' }}</td>
                         <td class="col-title">{{ $inquiry->title }}</td>
+                        <td class="col-type">{{ $typeLabels[$inquiry->inquiry_type] ?? $inquiry->inquiry_type }}</td>
                         <td class="col-priority">{{ $priorityLabels[$inquiry->priority] ?? $inquiry->priority }}</td>
                         <td class="col-status"><span class="role-chip">{{ $statusLabels[$inquiry->status] ?? $inquiry->status }}</span></td>
+                        <td class="col-review">{{ $reviewStatusLabels[$inquiry->review_status] ?? 'لم تُرسل للتدقيق' }}</td>
                         <td class="col-date">{{ $inquiry->created_at?->format('Y-m-d H:i') }}</td>
                         <td class="col-actions">
                             <div class="actions">
@@ -241,7 +267,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="muted">لا توجد استفسارات حالية.</td>
+                        <td colspan="9" class="muted">لا توجد استفسارات حالية.</td>
                     </tr>
                 @endforelse
             </tbody>

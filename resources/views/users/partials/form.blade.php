@@ -10,8 +10,24 @@
             @php($currentRole = old('role', $user?->role ?? 'asker'))
             <option value="asker" @selected($currentRole === 'asker')>مستفسر</option>
             <option value="responder" @selected($currentRole === 'responder')>مجيب</option>
+            <option value="reviewer" @selected($currentRole === 'reviewer')>مدقق</option>
             <option value="admin" @selected($currentRole === 'admin')>مسؤول</option>
         </select>
+    </div>
+
+    <div class="field full" id="responderScopesField">
+        <label>اختصاصات المجيب</label>
+        @php($scopeLabels = \App\Models\AppUser::RESPONDER_SCOPE_LABELS)
+        @php($currentScopes = old('responder_scopes', $user?->normalizedResponderScopes() ?? (in_array($currentRole, ['responder', 'admin'], true) ? ['all'] : [])))
+        <div class="actions">
+            @foreach ($scopeLabels as $scopeValue => $scopeLabel)
+                <label class="btn" style="cursor:pointer;">
+                    <input type="checkbox" name="responder_scopes[]" value="{{ $scopeValue }}" @checked(in_array($scopeValue, $currentScopes, true))>
+                    {{ $scopeLabel }}
+                </label>
+            @endforeach
+        </div>
+        <span class="muted">تُستخدم للمجيب أو المسؤول فقط. إذا تم اختيار "كل الأنواع" فستظهر له جميع الاستفسارات.</span>
     </div>
 
     <div class="field">
@@ -44,3 +60,21 @@
         <input id="unit" name="unit" value="{{ old('unit', $user?->unit) }}">
     </div>
 </div>
+
+<script>
+    (function () {
+        var roleSelect = document.getElementById('role');
+        var scopesField = document.getElementById('responderScopesField');
+        if (!roleSelect || !scopesField) {
+            return;
+        }
+
+        var toggleScopes = function () {
+            var visible = roleSelect.value === 'responder' || roleSelect.value === 'admin';
+            scopesField.style.display = visible ? '' : 'none';
+        };
+
+        roleSelect.addEventListener('change', toggleScopes);
+        toggleScopes();
+    })();
+</script>

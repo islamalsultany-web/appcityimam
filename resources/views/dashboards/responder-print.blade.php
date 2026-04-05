@@ -26,6 +26,13 @@
         'urgent' => 'مستعجلة',
         'very_urgent' => 'عاجلة جدا',
     ])
+    @php($typeLabels = [
+        'financial' => 'مالي',
+        'administrative' => 'إداري',
+        'technical' => 'تقني',
+        'warehouse' => 'مخزني',
+        'other' => 'أخرى',
+    ])
 
     <button class="print-btn" onclick="window.print()">طباعة</button>
     <h1>تقرير استفسار #{{ $inquiry->id }}</h1>
@@ -35,6 +42,8 @@
         <div class="box"><strong>المجيب:</strong> {{ $inquiry->responder?->username ?? '-' }}</div>
         <div class="box"><strong>الحالة:</strong> {{ $statusLabels[$inquiry->status] ?? $inquiry->status }}</div>
         <div class="box"><strong>الأولوية:</strong> {{ $priorityLabels[$inquiry->priority] ?? $inquiry->priority }}</div>
+        <div class="box"><strong>نوع الاستفسار:</strong> {{ $typeLabels[$inquiry->inquiry_type] ?? $inquiry->inquiry_type }}</div>
+        <div class="box"><strong>حالة التدقيق:</strong> {{ $inquiry->reviewStatusLabel() }}</div>
         <div class="box full"><strong>العنوان:</strong> {{ $inquiry->title }}</div>
         <div class="box full"><strong>نص الاستفسار:</strong><br>{{ $inquiry->body }}</div>
         <div class="box full"><strong>نص الإجابة:</strong><br>{{ $inquiry->response_body ?: 'لا توجد إجابة بعد' }}</div>

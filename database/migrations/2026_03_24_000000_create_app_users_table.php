@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->string('badge_number')->nullable();
             $table->string('division')->nullable();
             $table->string('unit')->nullable();
-            $table->enum('role', ['asker', 'responder', 'admin'])->default('asker');
+            $table->enum('role', ['asker', 'responder', 'reviewer', 'admin'])->default('asker');
             $table->timestamps();
         });
     }

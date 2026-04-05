@@ -24,20 +24,22 @@
         </div>
 
         <div class="field">
+            <label for="inquiry_type">نوع الاستفسار</label>
+            <select id="inquiry_type" name="inquiry_type" required>
+                <option value="financial" @selected(old('inquiry_type') === 'financial')>مالي</option>
+                <option value="administrative" @selected(old('inquiry_type') === 'administrative')>إداري</option>
+                <option value="technical" @selected(old('inquiry_type') === 'technical')>تقني</option>
+                <option value="warehouse" @selected(old('inquiry_type') === 'warehouse')>مخزني</option>
+                <option value="other" @selected(old('inquiry_type', 'other') === 'other')>أخرى</option>
+            </select>
+        </div>
+
+        <div class="field">
             <label for="priority">الأولوية</label>
             <select id="priority" name="priority" required>
                 <option value="normal" @selected(old('priority', 'normal') === 'normal')>عادية</option>
                 <option value="urgent" @selected(old('priority') === 'urgent')>مستعجلة</option>
                 <option value="very_urgent" @selected(old('priority') === 'very_urgent')>عاجلة جدا</option>
-            </select>
-        </div>
-
-        <div class="field">
-            <label for="preferred_channel">طريقة الرد المفضلة</label>
-            <select id="preferred_channel" name="preferred_channel" required>
-                <option value="system" @selected(old('preferred_channel', 'system') === 'system')>داخل النظام</option>
-                <option value="phone" @selected(old('preferred_channel') === 'phone')>اتصال هاتفي</option>
-                <option value="email" @selected(old('preferred_channel') === 'email')>بريد إلكتروني</option>
             </select>
         </div>
 

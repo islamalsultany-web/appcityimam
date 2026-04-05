@@ -4,7 +4,15 @@
 @section('page-title', 'معلومات المستخدم')
 
 @section('header-actions')
-    <a class="btn" href="{{ route('dashboard.asker') }}">رجوع للوحة المستفسر</a>
+    @php
+        $homeRoute = match($user->role) {
+            'asker' => 'dashboard.asker',
+            'responder' => 'dashboard.responder',
+            'reviewer' => 'dashboard.reviewer',
+            default => 'dashboard.responder',
+        };
+    @endphp
+    <a class="btn" href="{{ route($homeRoute) }}">رجوع للوحة</a>
 @endsection
 
 @section('topbar-actions')
@@ -22,7 +30,7 @@
         </div>
         <div class="field">
             <label>الدور</label>
-            <input value="{{ $user->role }}" disabled>
+            <input value="{{ \App\Models\AppUser::ROLE_LABELS[$user->role] ?? $user->role }}" disabled>
         </div>
         <div class="field">
             <label>الرقم الوظيفي</label>

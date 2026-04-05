@@ -35,7 +35,7 @@ class AppUsersImport implements OnEachRow
         $passwordConfirmation = $this->clean($source[2] ?? null) ?? $password;
 
         $role = Str::lower((string) ($this->clean($source[7] ?? null) ?? 'asker'));
-        if (! in_array($role, ['asker', 'responder', 'admin'], true)) {
+        if (! in_array($role, AppUser::ROLE_OPTIONS, true)) {
             $role = 'asker';
         }
 
@@ -52,6 +52,7 @@ class AppUsersImport implements OnEachRow
             'division' => $this->clean($source[5] ?? null),
             'unit' => $this->clean($source[6] ?? null),
             'role' => $role,
+            'responder_scopes' => in_array($role, ['responder', 'admin'], true) ? ['all'] : [],
         ];
 
         // updateOrCreate: 2 queries per row max; syncRoles intentionally omitted here

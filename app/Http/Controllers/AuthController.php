@@ -97,6 +97,7 @@ class AuthController extends Controller
         return match ($role) {
             'asker' => 'dashboard.asker',
             'responder' => 'dashboard.responder',
+            'reviewer' => 'dashboard.reviewer',
             default => 'dashboard.responder',
         };
     }

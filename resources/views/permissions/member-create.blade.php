@@ -50,6 +50,7 @@
                 <option value="admin" @selected(old('legacy_role') === 'admin')>{{ $roleLabels['admin'] ?? 'admin' }}</option>
                 <option value="asker" @selected(old('legacy_role') === 'asker')>{{ $roleLabels['asker'] ?? 'asker' }}</option>
                 <option value="responder" @selected(old('legacy_role') === 'responder')>{{ $roleLabels['responder'] ?? 'responder' }}</option>
+                <option value="reviewer" @selected(old('legacy_role') === 'reviewer')>{{ $roleLabels['reviewer'] ?? 'reviewer' }}</option>
             </select>
         </div>
 
@@ -64,6 +65,21 @@
                     </label>
                 @endforeach
             </div>
+        </div>
+
+        <div class="field full">
+            <label>اختصاصات المجيب</label>
+            @php($scopeLabels = \App\Models\AppUser::RESPONDER_SCOPE_LABELS)
+            @php($currentScopes = old('responder_scopes', ['all']))
+            <div class="actions">
+                @foreach ($scopeLabels as $scopeValue => $scopeLabel)
+                    <label class="btn" style="cursor:pointer;">
+                        <input type="checkbox" name="responder_scopes[]" value="{{ $scopeValue }}" @checked(in_array($scopeValue, $currentScopes, true))>
+                        {{ $scopeLabel }}
+                    </label>
+                @endforeach
+            </div>
+            <span class="muted">إذا كان المستخدم مجيبًا فستظهر له فقط الاستفسارات المطابقة لهذه الاختصاصات.</span>
         </div>
 
         <div class="field full">

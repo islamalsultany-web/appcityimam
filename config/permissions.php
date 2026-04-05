@@ -54,6 +54,15 @@ return [
                 'inquiries.responder.delete' => 'حذف استفسار',
             ],
         ],
+        'reviewer_pages' => [
+            'display_name' => 'صفحات المدقق',
+            'permissions' => [
+                'inquiries.reviewer.view' => 'عرض لوحة المدقق',
+                'inquiries.reviewer.review_page' => 'عرض صفحة تدقيق الإجابة',
+                'inquiries.reviewer.review' => 'اعتماد أو إعادة إجابات المجيبين',
+                'inquiries.reviewer.manage' => 'إدارة تدقيق الإجابات',
+            ],
+        ],
         'permissions' => [
             'display_name' => 'صلاحيات المنتسبين',
             'permissions' => [
@@ -84,6 +93,15 @@ return [
                 'inquiries.responder.view',
                 'inquiries.responder.answer',
                 'inquiries.responder.manage',
+            ],
+        ],
+        'reviewer' => [
+            'display_name' => 'مدقق',
+            'permissions' => [
+                'inquiries.reviewer.view',
+                'inquiries.reviewer.review_page',
+                'inquiries.reviewer.review',
+                'inquiries.reviewer.manage',
             ],
         ],
     ],

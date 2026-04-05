@@ -20,6 +20,7 @@
         $roleLabels = collect(config('permissions.role_templates', []))
             ->mapWithKeys(fn ($config, $name) => [$name => $config['display_name'] ?? $name])
             ->all();
+        $scopeLabels = \App\Models\AppUser::RESPONDER_SCOPE_LABELS;
     @endphp
 
     <div class="table-wrap">
@@ -29,6 +30,7 @@
                     <th>#</th>
                     <th>اسم المستخدم</th>
                     <th>الدور الحالي</th>
+                    <th>اختصاصات المجيب</th>
                     <th>الأدوار</th>
                     <th>إجراء</th>
                 </tr>
@@ -39,6 +41,13 @@
                         <td>{{ $user->id }}</td>
                         <td>{{ $user->username }}</td>
                         <td>{{ $roleLabels[$user->role] ?? $user->role }}</td>
+                        <td>
+                            @if (in_array($user->role, ['responder', 'admin'], true))
+                                {{ collect($user->normalizedResponderScopes())->map(fn ($scope) => $scopeLabels[$scope] ?? $scope)->join('، ') ?: '-' }}
+                            @else
+                                -
+                            @endif
+                        </td>
                         <td>{{ $user->roles->pluck('name')->map(fn ($name) => $roleLabels[$name] ?? $name)->join('، ') ?: '-' }}</td>
                         <td>
                             <a class="btn primary" href="{{ route('permissions.members.edit', $user) }}">تعديل الصلاحيات</a>
@@ -46,7 +55,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="muted">لا توجد بيانات منتسبين.</td>
+                        <td colspan="6" class="muted">لا توجد بيانات منتسبين.</td>
                     </tr>
                 @endforelse
             </tbody>

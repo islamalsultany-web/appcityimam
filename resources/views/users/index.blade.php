@@ -46,6 +46,7 @@
                 <option value="">الكل</option>
                 <option value="asker" @selected(request('role') === 'asker')>مستفسر</option>
                 <option value="responder" @selected(request('role') === 'responder')>مجيب</option>
+                <option value="reviewer" @selected(request('role') === 'reviewer')>مدقق</option>
                 <option value="admin" @selected(request('role') === 'admin')>مدير</option>
             </select>
         </div>
@@ -81,7 +82,7 @@
                         <td>{{ $user->badge_number ?: '-' }}</td>
                         <td>{{ $user->division ?: '-' }}</td>
                         <td>{{ $user->unit ?: '-' }}</td>
-                        <td><span class="role-chip">{{ $user->role }}</span></td>
+                        <td><span class="role-chip">{{ \App\Models\AppUser::ROLE_LABELS[$user->role] ?? $user->role }}</span></td>
                         <td>
                             <div class="actions">
                                 <a class="btn" href="{{ route('users.show', $user) }}">عرض</a>

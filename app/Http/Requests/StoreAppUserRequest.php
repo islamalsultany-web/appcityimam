@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\AppUser;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAppUserRequest extends FormRequest
 {
@@ -21,7 +23,9 @@ class StoreAppUserRequest extends FormRequest
             'badge_number' => ['nullable', 'string', 'max:40'],
             'division' => ['nullable', 'string', 'max:80'],
             'unit' => ['nullable', 'string', 'max:80'],
-            'role' => ['required', 'in:asker,responder,admin'],
+            'role' => ['required', Rule::in(AppUser::ROLE_OPTIONS)],
+            'responder_scopes' => ['nullable', 'array'],
+            'responder_scopes.*' => ['string', Rule::in(AppUser::RESPONDER_SCOPE_OPTIONS)],
         ];
     }
 }

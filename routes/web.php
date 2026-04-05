@@ -34,6 +34,10 @@ Route::middleware('app.auth')->group(function (): void {
 	Route::patch('/responder/dashboard/{inquiry}', [InquiryController::class, 'responderAnswer'])->name('responder.inquiries.answer');
 	Route::delete('/responder/dashboard/{inquiry}', [InquiryController::class, 'responderDestroy'])->name('responder.inquiries.destroy');
 
+	Route::get('/reviewer/dashboard', [InquiryController::class, 'reviewerIndex'])->name('dashboard.reviewer');
+	Route::get('/reviewer/dashboard/{inquiry}', [InquiryController::class, 'reviewerShow'])->name('reviewer.inquiries.show');
+	Route::patch('/reviewer/dashboard/{inquiry}', [InquiryController::class, 'reviewerReview'])->name('reviewer.inquiries.review');
+
 	Route::delete('/users', [AppUserController::class, 'destroyAll'])->name('users.destroyAll');
 	Route::get('/users/excel', [AppUserController::class, 'excelPage'])->name('users.excel');
 	Route::get('/users/excel/template', [AppUserController::class, 'excelTemplate'])->name('users.excel.template');

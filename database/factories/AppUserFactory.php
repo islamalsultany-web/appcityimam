@@ -16,6 +16,7 @@ class AppUserFactory extends Factory
     public function definition(): array
     {
         $plainPassword = '12345678';
+        $role = fake()->randomElement(['asker', 'responder', 'reviewer', 'admin']);
 
         return [
             'username' => fake()->unique()->userName(),
@@ -25,7 +26,8 @@ class AppUserFactory extends Factory
             'badge_number' => (string) fake()->numberBetween(1000, 99999),
             'division' => fake()->randomElement(['شعبة الآليات', 'شعبة الفندق', 'شعبة الإدارة']),
             'unit' => fake()->randomElement(['وحدة الاتصالات', 'وحدة الزينبيات', 'وحدة النظام']),
-            'role' => fake()->randomElement(['asker', 'responder', 'admin']),
+            'role' => $role,
+            'responder_scopes' => in_array($role, ['responder', 'admin'], true) ? ['all'] : [],
         ];
     }
 }

@@ -466,6 +466,7 @@
         $showResponderDashboardLink = $hasSidebarAccess(['inquiries.responder.view'], ['responder']);
         $showResponderDeletedLink = $hasSidebarAccess(['inquiries.responder.deleted', 'inquiries.responder.manage'], ['responder']);
         $showResponderReportLink = $hasSidebarAccess(['inquiries.responder.report.print', 'inquiries.responder.manage'], ['responder']);
+        $showReviewerDashboardLink = $hasSidebarAccess(['inquiries.reviewer.view', 'inquiries.reviewer.manage'], ['reviewer']);
     @endphp
 
     <header class="topbar">
@@ -523,6 +524,11 @@
                     @endif
                     @if ($showResponderReportLink)
                         <a class="sidebar-link {{ request()->routeIs('responder.inquiries.report.print') ? 'active' : '' }}" href="{{ route('responder.inquiries.report.print') }}" target="_blank">طباعة تقرير</a>
+                    @endif
+
+                    @if ($showReviewerDashboardLink)
+                        <div class="sidebar-section-title">صفحات المدقق</div>
+                        <a class="sidebar-link {{ request()->routeIs('dashboard.reviewer') || request()->routeIs('reviewer.inquiries.*') ? 'active' : '' }}" href="{{ route('dashboard.reviewer') }}">لوحة المدقق</a>
                     @endif
 
                     @if ($currentRole)

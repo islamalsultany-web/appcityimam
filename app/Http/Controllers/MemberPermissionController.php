@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AppUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -53,7 +54,9 @@ class MemberPermissionController extends Controller
             'roles.*' => ['string', 'exists:roles,name'],
             'permissions' => ['array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
-            'legacy_role' => ['nullable', 'in:admin,asker,responder'],
+            'legacy_role' => ['nullable', Rule::in(AppUser::ROLE_OPTIONS)],
+            'responder_scopes' => ['nullable', 'array'],
+            'responder_scopes.*' => ['string', Rule::in(AppUser::RESPONDER_SCOPE_OPTIONS)],
         ]);
 
         $user = AppUser::query()->findOrFail((int) $data['user_id']);
@@ -65,8 +68,13 @@ class MemberPermissionController extends Controller
 
         if (! empty($data['legacy_role'])) {
             $user->role = $data['legacy_role'];
-            $user->save();
         }
+
+        $user->responder_scopes = AppUser::sanitizeResponderScopes(
+            $data['responder_scopes'] ?? [],
+            (string) $user->role
+        );
+        $user->save();
 
         return redirect()->route('permissions.members.index')->with('success', 'تمت إضافة صلاحيات المنتسب بنجاح.');
     }
@@ -80,7 +88,9 @@ class MemberPermissionController extends Controller
             'roles.*' => ['string', 'exists:roles,name'],
             'permissions' => ['array'],
             'permissions.*' => ['string', 'exists:permissions,name'],
-            'legacy_role' => ['nullable', 'in:admin,asker,responder'],
+            'legacy_role' => ['nullable', Rule::in(AppUser::ROLE_OPTIONS)],
+            'responder_scopes' => ['nullable', 'array'],
+            'responder_scopes.*' => ['string', Rule::in(AppUser::RESPONDER_SCOPE_OPTIONS)],
         ]);
 
         $roles = $data['roles'] ?? [];
@@ -91,8 +101,13 @@ class MemberPermissionController extends Controller
 
         if (! empty($data['legacy_role'])) {
             $user->role = $data['legacy_role'];
-            $user->save();
         }
+
+        $user->responder_scopes = AppUser::sanitizeResponderScopes(
+            $data['responder_scopes'] ?? [],
+            (string) $user->role
+        );
+        $user->save();
 
         return redirect()->route('permissions.members.index')->with('success', 'تم تحديث صلاحيات المنتسب بنجاح.');
     }

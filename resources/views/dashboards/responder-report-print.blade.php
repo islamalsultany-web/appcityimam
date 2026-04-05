@@ -26,6 +26,13 @@
         'urgent' => 'مستعجلة',
         'very_urgent' => 'عاجلة جدا',
     ])
+    @php($typeLabels = [
+        'financial' => 'مالي',
+        'administrative' => 'إداري',
+        'technical' => 'تقني',
+        'warehouse' => 'مخزني',
+        'other' => 'أخرى',
+    ])
 
     <button class="print-btn" onclick="window.print()">طباعة</button>
     <h2>تقرير الاستفسارات {{ $statusFilter ? '(' . ($statusLabels[$statusFilter] ?? $statusFilter) . ')' : '(كل الحالات)' }}</h2>
@@ -36,6 +43,7 @@
                 <th>#</th>
                 <th>المستفسر</th>
                 <th>العنوان</th>
+                <th>نوع الاستفسار</th>
                 <th>الأولوية</th>
                 <th>الحالة</th>
                 <th>تاريخ الإرسال</th>
@@ -47,13 +55,14 @@
                     <td>{{ $inquiry->id }}</td>
                     <td>{{ $inquiry->asker?->username ?? '-' }}</td>
                     <td>{{ $inquiry->title }}</td>
+                    <td>{{ $typeLabels[$inquiry->inquiry_type] ?? $inquiry->inquiry_type }}</td>
                     <td>{{ $priorityLabels[$inquiry->priority] ?? $inquiry->priority }}</td>
                     <td>{{ $statusLabels[$inquiry->status] ?? $inquiry->status }}</td>
                     <td>{{ $inquiry->created_at?->format('Y-m-d H:i') }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6">لا توجد بيانات للتقرير.</td>
+                    <td colspan="7">لا توجد بيانات للتقرير.</td>
                 </tr>
             @endforelse
         </tbody>

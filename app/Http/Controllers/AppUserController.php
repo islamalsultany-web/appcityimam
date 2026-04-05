@@ -89,7 +89,7 @@ class AppUserController extends Controller
 
     public function store(StoreAppUserRequest $request): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $this->normalizeUserPayload($request->validated());
         $data['password'] = Hash::make($data['password']);
 
         AppUser::create($data);
@@ -109,7 +109,7 @@ class AppUserController extends Controller
 
     public function update(UpdateAppUserRequest $request, AppUser $user): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $this->normalizeUserPayload($request->validated());
         $data['password'] = Hash::make($data['password']);
 
         $user->update($data);
@@ -129,5 +129,15 @@ class AppUserController extends Controller
         AppUser::query()->delete();
 
         return redirect()->route('users.index')->with('success', 'تم حذف جميع المستخدمين بنجاح.');
+    }
+
+    private function normalizeUserPayload(array $data): array
+    {
+        $data['responder_scopes'] = AppUser::sanitizeResponderScopes(
+            $data['responder_scopes'] ?? [],
+            (string) ($data['role'] ?? 'asker')
+        );
+
+        return $data;
     }
 }
