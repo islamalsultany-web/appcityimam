@@ -307,15 +307,62 @@
             font-size: 0.9rem;
         }
 
-        /* ── Role chip ── */
+        /* ── Role / status chip ── */
         .role-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
             border-radius: 999px;
             border: 1px solid rgba(243, 197, 66, 0.5);
             background: rgba(243, 197, 66, 0.16);
             color: #7a540a;
             font-size: 0.76rem;
-            padding: 2px 10px;
-            font-weight: 600;
+            padding: 3px 10px;
+            font-weight: 700;
+        }
+
+        .status-neutral {
+            border-color: rgba(148, 163, 184, 0.45);
+            background: rgba(241, 245, 249, 0.9);
+            color: #475569;
+        }
+
+        .status-pending {
+            border-color: rgba(245, 158, 11, 0.45);
+            background: rgba(255, 247, 218, 0.95);
+            color: #9a6700;
+        }
+
+        .status-progress {
+            border-color: rgba(14, 165, 233, 0.45);
+            background: rgba(230, 246, 255, 0.95);
+            color: #075985;
+        }
+
+        .status-reviewing {
+            border-color: rgba(249, 115, 22, 0.45);
+            background: rgba(255, 237, 213, 0.95);
+            color: #9a3412;
+        }
+
+        .status-answered,
+        .status-approved {
+            border-color: rgba(34, 197, 94, 0.45);
+            background: rgba(233, 255, 232, 0.95);
+            color: #166534;
+        }
+
+        .status-needs-info,
+        .status-returned {
+            border-color: rgba(239, 68, 68, 0.45);
+            background: rgba(255, 233, 233, 0.95);
+            color: #991b1b;
+        }
+
+        .status-closed {
+            border-color: rgba(107, 114, 128, 0.4);
+            background: rgba(241, 241, 241, 0.95);
+            color: #4b5563;
         }
 
         /* ── Form grid ── */
@@ -456,17 +503,26 @@
             return false;
         };
 
-        $showUsersLink = $hasSidebarAccess(['users.view', 'users.index'], ['admin']);
-        $showTrackMemberLink = $hasSidebarAccess(['inquiries.asker.view'], ['asker']);
-        $showPermissionsLink = $hasSidebarAccess(['permissions.members.view', 'permissions.members.edit'], ['admin']);
+        $showUsersLink = \Illuminate\Support\Facades\Route::has('users.index')
+            && $hasSidebarAccess(['users.view', 'users.index'], ['admin']);
+        $showTrackMemberLink = \Illuminate\Support\Facades\Route::has('dashboard.asker')
+            && $hasSidebarAccess(['inquiries.asker.view'], ['asker']);
+        $showPermissionsLink = \Illuminate\Support\Facades\Route::has('permissions.members.index')
+            && $hasSidebarAccess(['permissions.members.view', 'permissions.members.edit'], ['admin']);
 
-        $showAskerDashboardLink = $hasSidebarAccess(['inquiries.asker.view'], ['asker']);
-        $showAskerCreateLink = $hasSidebarAccess(['inquiries.asker.create_page', 'inquiries.asker.create'], ['asker']);
+        $showAskerDashboardLink = \Illuminate\Support\Facades\Route::has('dashboard.asker')
+            && $hasSidebarAccess(['inquiries.asker.view'], ['asker']);
+        $showAskerCreateLink = \Illuminate\Support\Facades\Route::has('asker.inquiries.create')
+            && $hasSidebarAccess(['inquiries.asker.create_page', 'inquiries.asker.create'], ['asker']);
 
-        $showResponderDashboardLink = $hasSidebarAccess(['inquiries.responder.view'], ['responder']);
-        $showResponderDeletedLink = $hasSidebarAccess(['inquiries.responder.deleted', 'inquiries.responder.manage'], ['responder']);
-        $showResponderReportLink = $hasSidebarAccess(['inquiries.responder.report.print', 'inquiries.responder.manage'], ['responder']);
-        $showReviewerDashboardLink = $hasSidebarAccess(['inquiries.reviewer.view', 'inquiries.reviewer.manage'], ['reviewer']);
+        $showResponderDashboardLink = \Illuminate\Support\Facades\Route::has('dashboard.responder')
+            && $hasSidebarAccess(['inquiries.responder.view'], ['responder']);
+        $showResponderDeletedLink = \Illuminate\Support\Facades\Route::has('responder.inquiries.deleted')
+            && $hasSidebarAccess(['inquiries.responder.deleted', 'inquiries.responder.manage'], ['responder']);
+        $showResponderReportLink = \Illuminate\Support\Facades\Route::has('responder.inquiries.report.print')
+            && $hasSidebarAccess(['inquiries.responder.report.print', 'inquiries.responder.manage'], ['responder']);
+        $showReviewerDashboardLink = \Illuminate\Support\Facades\Route::has('dashboard.reviewer')
+            && $hasSidebarAccess(['inquiries.reviewer.view', 'inquiries.reviewer.manage'], ['reviewer']);
     @endphp
 
     <header class="topbar">

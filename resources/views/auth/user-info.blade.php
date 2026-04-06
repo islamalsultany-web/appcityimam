@@ -11,6 +11,10 @@
             'reviewer' => 'dashboard.reviewer',
             default => 'dashboard.responder',
         };
+
+        if (! \Illuminate\Support\Facades\Route::has($homeRoute)) {
+            $homeRoute = \Illuminate\Support\Facades\Route::has('dashboard.responder') ? 'dashboard.responder' : 'home';
+        }
     @endphp
     <a class="btn" href="{{ route($homeRoute) }}">رجوع للوحة</a>
 @endsection

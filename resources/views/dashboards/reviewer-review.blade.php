@@ -41,10 +41,10 @@
     <ul class="list-grid" style="margin-bottom: 14px;">
         <li><strong>المستفسر:</strong> {{ $inquiry->asker?->username ?? '-' }}</li>
         <li><strong>المجيب:</strong> {{ $inquiry->responder?->username ?? '-' }}</li>
-        <li><strong>الحالة:</strong> {{ $statusLabels[$inquiry->status] ?? $inquiry->status }}</li>
+        <li><strong>الحالة:</strong> <span class="role-chip {{ $inquiry->statusBadgeClass() }}">{{ $inquiry->statusLabel() }}</span></li>
         <li><strong>الأولوية:</strong> {{ $priorityLabels[$inquiry->priority] ?? $inquiry->priority }}</li>
         <li><strong>نوع الاستفسار:</strong> {{ $typeLabels[$inquiry->inquiry_type] ?? $inquiry->inquiry_type }}</li>
-        <li><strong>حالة التدقيق:</strong> {{ $reviewStatusLabels[$inquiry->review_status] ?? 'لم تُرسل للتدقيق' }}</li>
+        <li><strong>حالة التدقيق:</strong> <span class="role-chip {{ $inquiry->reviewStatusBadgeClass() }}">{{ $inquiry->reviewStatusLabel() }}</span></li>
         <li><strong>تاريخ الرد:</strong> {{ $inquiry->responded_at?->format('Y-m-d H:i') ?? '-' }}</li>
         <li><strong>آخر مدقق:</strong> {{ $inquiry->reviewer?->username ?? '-' }}</li>
         <li class="full" style="grid-column: 1 / -1;"><strong>عنوان الاستفسار:</strong> {{ $inquiry->title }}</li>

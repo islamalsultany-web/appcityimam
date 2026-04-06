@@ -248,8 +248,12 @@
                         <td class="col-title">{{ $inquiry->title }}</td>
                         <td class="col-type">{{ $typeLabels[$inquiry->inquiry_type] ?? $inquiry->inquiry_type }}</td>
                         <td class="col-priority">{{ $priorityLabels[$inquiry->priority] ?? $inquiry->priority }}</td>
-                        <td class="col-status"><span class="role-chip">{{ $statusLabels[$inquiry->status] ?? $inquiry->status }}</span></td>
-                        <td class="col-review">{{ $reviewStatusLabels[$inquiry->review_status] ?? 'لم تُرسل للتدقيق' }}</td>
+                        <td class="col-status">
+                            <span class="role-chip {{ $inquiry->statusBadgeClass() }}">{{ $inquiry->statusLabel() }}</span>
+                        </td>
+                        <td class="col-review">
+                            <span class="role-chip {{ $inquiry->reviewStatusBadgeClass() }}">{{ $inquiry->reviewStatusLabel() }}</span>
+                        </td>
                         <td class="col-date">{{ $inquiry->created_at?->format('Y-m-d H:i') }}</td>
                         <td class="col-actions">
                             <div class="actions">

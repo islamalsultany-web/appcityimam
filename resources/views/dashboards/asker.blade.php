@@ -203,8 +203,9 @@
                         <td>{{ $inquiry->title }}</td>
                         <td>{{ $typeLabels[$inquiry->inquiry_type] ?? $inquiry->inquiry_type }}</td>
                         <td>{{ $priorityLabels[$inquiry->priority] ?? $inquiry->priority }}</td>
-                        @php($displayStatus = $inquiry->review_status === 'pending_review' ? 'قيد التدقيق' : ($statusLabels[$inquiry->status] ?? $inquiry->status))
-                        <td><span class="role-chip">{{ $displayStatus }}</span></td>
+                        <td>
+                            <span class="role-chip {{ $inquiry->statusBadgeClass(true) }}">{{ $inquiry->displayStatusLabel() }}</span>
+                        </td>
                         <td>{{ $inquiry->created_at?->format('Y-m-d H:i') }}</td>
                         <td>{{ $inquiry->responded_at?->format('Y-m-d H:i') ?? '-' }}</td>
                         <td>{{ $inquiry->publicResponseBody() ? \Illuminate\Support\Str::limit($inquiry->publicResponseBody(), 70) : $inquiry->publicResponsePlaceholder() }}</td>

@@ -6,6 +6,7 @@ use App\Models\AppUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -94,11 +95,19 @@ class AuthController extends Controller
 
     private function resolveHomeRoute(string $role): string
     {
-        return match ($role) {
+        $preferredRoute = match ($role) {
             'asker' => 'dashboard.asker',
             'responder' => 'dashboard.responder',
             'reviewer' => 'dashboard.reviewer',
             default => 'dashboard.responder',
         };
+
+        foreach ([$preferredRoute, 'dashboard.responder', 'dashboard.asker', 'home'] as $routeName) {
+            if (Route::has($routeName)) {
+                return $routeName;
+            }
+        }
+
+        return 'home';
     }
 }

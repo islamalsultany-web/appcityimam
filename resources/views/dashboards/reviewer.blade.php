@@ -43,6 +43,10 @@
 
         .stat-card strong { font-size: 1.2rem; }
         .stat-card.active { outline: 2px solid #0f56d4; }
+        .stat-all { background: linear-gradient(135deg, #e8f0ff, #f3f7ff); }
+        .stat-reviewing { background: linear-gradient(135deg, #fff0db, #fff8ee); }
+        .stat-approved { background: linear-gradient(135deg, #e9ffe8, #f4fff3); }
+        .stat-returned { background: linear-gradient(135deg, #ffe9e9, #fff4f4); }
         .search-grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(160px, 1fr));
@@ -98,19 +102,19 @@
     </form>
 
     <div class="stats-grid">
-        <a class="stat-card {{ $reviewStatusFilter === null ? 'active' : '' }}" href="{{ route('dashboard.reviewer', $searchParams) }}">
+        <a class="stat-card stat-all {{ $reviewStatusFilter === null ? 'active' : '' }}" href="{{ route('dashboard.reviewer', $searchParams) }}">
             <span>كل الإجابات</span>
             <strong>{{ $stats['all'] ?? 0 }}</strong>
         </a>
-        <a class="stat-card {{ $reviewStatusFilter === 'pending_review' ? 'active' : '' }}" href="{{ route('dashboard.reviewer', array_merge($searchParams, ['review_status' => 'pending_review'])) }}">
+        <a class="stat-card stat-reviewing {{ $reviewStatusFilter === 'pending_review' ? 'active' : '' }}" href="{{ route('dashboard.reviewer', array_merge($searchParams, ['review_status' => 'pending_review'])) }}">
             <span>بانتظار التدقيق</span>
             <strong>{{ $stats['pending_review'] ?? 0 }}</strong>
         </a>
-        <a class="stat-card {{ $reviewStatusFilter === 'approved' ? 'active' : '' }}" href="{{ route('dashboard.reviewer', array_merge($searchParams, ['review_status' => 'approved'])) }}">
+        <a class="stat-card stat-approved {{ $reviewStatusFilter === 'approved' ? 'active' : '' }}" href="{{ route('dashboard.reviewer', array_merge($searchParams, ['review_status' => 'approved'])) }}">
             <span>معتمد</span>
             <strong>{{ $stats['approved'] ?? 0 }}</strong>
         </a>
-        <a class="stat-card {{ $reviewStatusFilter === 'returned' ? 'active' : '' }}" href="{{ route('dashboard.reviewer', array_merge($searchParams, ['review_status' => 'returned'])) }}">
+        <a class="stat-card stat-returned {{ $reviewStatusFilter === 'returned' ? 'active' : '' }}" href="{{ route('dashboard.reviewer', array_merge($searchParams, ['review_status' => 'returned'])) }}">
             <span>معاد للمجيب</span>
             <strong>{{ $stats['returned'] ?? 0 }}</strong>
         </a>
@@ -138,7 +142,7 @@
                         <td>{{ $inquiry->responder?->username ?? '-' }}</td>
                         <td>{{ $inquiry->title }}</td>
                         <td>{{ $typeLabels[$inquiry->inquiry_type] ?? $inquiry->inquiry_type }}</td>
-                        <td><span class="role-chip">{{ $reviewStatusLabels[$inquiry->review_status] ?? 'لم تُرسل للتدقيق' }}</span></td>
+                        <td><span class="role-chip {{ $inquiry->reviewStatusBadgeClass() }}">{{ $inquiry->reviewStatusLabel() }}</span></td>
                         <td>{{ $inquiry->responded_at?->format('Y-m-d H:i') ?? '-' }}</td>
                         <td>
                             <a class="btn primary" href="{{ route('reviewer.inquiries.show', $inquiry) }}">تدقيق</a>
