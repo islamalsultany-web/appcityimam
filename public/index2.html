@@ -719,8 +719,8 @@ body {
 
     <main class="main">
         <h2 class="section-title">بوابة المنتسب الرقمية</h2>
-        <a class="app-card" data-id="hr" data-title="برنامج الموارد البشرية" href="https://hr.cityimam.com/" target="_blank" rel="noopener noreferrer" draggable="true">
-            <h3>برنامج الموارد البشرية</h3>
+        <a class="app-card" data-id="hr" data-title="الخدمات الادارية" href="https://hr.cityimam.com/" target="_blank" rel="noopener noreferrer" draggable="true">
+            <h3>الخدمات الادارية</h3>
             <div class="icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
                     <rect x="4" y="3" width="16" height="18" rx="2"></rect>
@@ -731,8 +731,8 @@ body {
             </div>
         </a>
 
-        <a class="app-card" data-id="mony" data-title="برنامج الحسابات" href="https://mony.cityimam.com/" target="_blank" rel="noopener noreferrer" draggable="true">
-            <h3>برنامج الحسابات</h3>
+        <a class="app-card" data-id="mony" data-title="الخدمات المالية" href="https://mony.cityimam.com/" target="_blank" rel="noopener noreferrer" draggable="true">
+            <h3>الخدمات المالية</h3>
             <div class="icon gold" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="9"></circle>
@@ -743,8 +743,8 @@ body {
             </div>
         </a>
 
-        <a class="app-card" data-id="asset" data-title="برنامج الموجودات الثابتة" href="https://assetcity.cityimam.com/" target="_blank" rel="noopener noreferrer" draggable="true">
-            <h3>برنامج الموجودات الثابتة</h3>
+        <a class="app-card" data-id="asset" data-title="ادارة الموجودات الثابتة" href="https://assetcity.cityimam.com/" target="_blank" rel="noopener noreferrer" draggable="true">
+            <h3>ادارة الموجودات الثابتة</h3>
             <div class="icon cyan" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
                     <path d="M12 3v12"></path>
