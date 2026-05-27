@@ -2,11 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Inquiry;
+use App\Http\Requests\ResponderAnswerRequest;
+use App\Http\Requests\ReviewerReviewRequest;
+use App\Http\Requests\StoreAskerInquiryRequest;
 use App\Models\AppUser;
+use App\Models\Inquiry;
+use App\Support\AppAuth;
+use App\Support\AuditLogger;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\View\View;
 
 class InquiryController extends Controller
@@ -19,26 +25,28 @@ class InquiryController extends Controller
 
     private const ALLOWED_REVIEW_FILTERS = ['pending_review', 'approved', 'returned'];
 
-    public function storeFromAsker(Request $request): RedirectResponse
+    public function storeFromAsker(StoreAskerInquiryRequest $request): RedirectResponse
     {
         $this->ensureAsker($request);
 
-        $data = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'inquiry_type' => ['required', 'in:' . implode(',', self::ALLOWED_INQUIRY_TYPES)],
-            'priority' => ['required', 'in:normal,urgent,very_urgent'],
-            'body' => ['required', 'string'],
-            'attachment' => ['nullable', 'file', 'max:5120'],
-        ]);
+        $data = $request->validated();
 
         if ($request->hasFile('attachment')) {
-            $data['attachment_path'] = $request->file('attachment')->store('inquiries', 'public');
+            $data['attachment_path'] = $this->storeUploadedAttachment(
+                $request->file('attachment'),
+                'inquiries'
+            );
         }
 
-        $data['asker_user_id'] = (int) $request->session()->get('auth_app_user_id');
+        unset($data['attachment']);
+
+        $data['asker_user_id'] = AppAuth::id($request) ?? 0;
         $data['status'] = 'pending';
 
         Inquiry::create($data);
+        AuditLogger::security($request, 'inquiries.asker.store', [
+            'inquiry_type' => $data['inquiry_type'] ?? null,
+        ]);
 
         return redirect()->route('dashboard.asker')->with('success', 'تم إرسال الاستفسار بنجاح.');
     }
@@ -53,8 +61,9 @@ class InquiryController extends Controller
     public function askerIndex(Request $request): View
     {
         $this->ensureAsker($request);
+        $this->validateOptionalDateFilters($request);
 
-        $askerId = (int) $request->session()->get('auth_app_user_id');
+        $askerId = AppAuth::id($request) ?? 0;
 
         $statusFilter = $request->query('status');
         if (! is_string($statusFilter) || ! in_array($statusFilter, self::ALLOWED_STATUS_FILTERS, true)) {
@@ -110,7 +119,7 @@ class InquiryController extends Controller
     {
         $this->ensureAsker($request);
 
-        if ((int) $inquiry->asker_user_id !== (int) $request->session()->get('auth_app_user_id')) {
+        if ((int) $inquiry->asker_user_id !== (int) (AppAuth::id($request) ?? 0)) {
             abort(403);
         }
 
@@ -123,7 +132,7 @@ class InquiryController extends Controller
     {
         $this->ensureAsker($request);
 
-        if ((int) $inquiry->asker_user_id !== (int) $request->session()->get('auth_app_user_id')) {
+        if ((int) $inquiry->asker_user_id !== (int) (AppAuth::id($request) ?? 0)) {
             abort(403);
         }
 
@@ -135,6 +144,7 @@ class InquiryController extends Controller
     public function responderIndex(Request $request): View
     {
         $authUser = $this->ensureResponder($request);
+        $this->validateOptionalDateFilters($request);
 
         $statusFilter = $request->query('status');
         if (! is_string($statusFilter) || ! in_array($statusFilter, self::ALLOWED_STATUS_FILTERS, true)) {
@@ -219,26 +229,29 @@ class InquiryController extends Controller
         return view('dashboards.responder-print', compact('inquiry'));
     }
 
-    public function responderAnswer(Request $request, Inquiry $inquiry): RedirectResponse
+    public function responderAnswer(ResponderAnswerRequest $request, Inquiry $inquiry): RedirectResponse
     {
         $authUser = $this->ensureResponder($request);
         $this->ensureResponderCanAccessInquiry($authUser, $inquiry);
 
-        $data = $request->validate([
-            'status' => ['required', 'in:in_progress,answered,needs_info,closed'],
-            'priority' => ['required', 'in:normal,urgent,very_urgent'],
-            'response_type' => ['required', 'in:final,partial,request_info'],
-            'follow_up_date' => ['nullable', 'date'],
-            'response_body' => ['required', 'string'],
-            'internal_note' => ['nullable', 'string'],
-            'response_attachment' => ['nullable', 'file', 'max:5120'],
-        ]);
+        $validated = $request->validated();
+        $data = collect($validated)->only([
+            'status',
+            'priority',
+            'response_type',
+            'follow_up_date',
+            'response_body',
+            'internal_note',
+        ])->all();
 
         if ($request->hasFile('response_attachment')) {
-            $data['response_attachment_path'] = $request->file('response_attachment')->store('responses', 'public');
+            $data['response_attachment_path'] = $this->storeUploadedAttachment(
+                $request->file('response_attachment'),
+                'responses'
+            );
         }
 
-        $data['responder_user_id'] = (int) $request->session()->get('auth_app_user_id');
+        $data['responder_user_id'] = AppAuth::id($request) ?? 0;
         $data['responded_at'] = now();
         $data['review_status'] = 'pending_review';
         $data['review_note'] = null;
@@ -246,6 +259,11 @@ class InquiryController extends Controller
         $data['reviewed_at'] = null;
 
         $inquiry->update($data);
+        AuditLogger::security($request, 'inquiries.responder.answer', [
+            'inquiry_id' => $inquiry->id,
+            'status' => $data['status'] ?? null,
+            'review_status' => $data['review_status'] ?? null,
+        ], targetType: Inquiry::class, targetId: $inquiry->id);
 
         return redirect()->route('responder.inquiries.show', $inquiry)->with('success', 'تم حفظ الإجابة وإرسالها إلى المدقق بنجاح.');
     }
@@ -256,6 +274,9 @@ class InquiryController extends Controller
         $this->ensureResponderCanAccessInquiry($authUser, $inquiry);
 
         $inquiry->delete();
+        AuditLogger::security($request, 'inquiries.responder.delete', [
+            'inquiry_id' => $inquiry->id,
+        ], targetType: Inquiry::class, targetId: $inquiry->id);
 
         return redirect()->route('dashboard.responder')->with('success', 'تم حذف الاستفسار.');
     }
@@ -279,6 +300,9 @@ class InquiryController extends Controller
         $inquiry = Inquiry::onlyTrashed()->findOrFail($inquiryId);
         $this->ensureResponderCanAccessInquiry($authUser, $inquiry);
         $inquiry->restore();
+        AuditLogger::security($request, 'inquiries.responder.restore', [
+            'inquiry_id' => $inquiry->id,
+        ], targetType: Inquiry::class, targetId: $inquiry->id);
 
         return redirect()->route('responder.inquiries.deleted')->with('success', 'تمت استعادة الاستفسار بنجاح.');
     }
@@ -286,6 +310,7 @@ class InquiryController extends Controller
     public function responderPrintReport(Request $request): View
     {
         $authUser = $this->ensureResponder($request);
+        $this->validateOptionalDateFilters($request);
 
         $statusFilter = $request->query('status');
         if (! is_string($statusFilter) || ! in_array($statusFilter, self::ALLOWED_STATUS_FILTERS, true)) {
@@ -331,7 +356,7 @@ class InquiryController extends Controller
 
     public function reviewerIndex(Request $request): View
     {
-        $this->ensureReviewer($request);
+        $authUser = $this->ensureReviewer($request);
 
         $reviewStatusFilter = $request->query('review_status');
         if (! is_string($reviewStatusFilter) || ! in_array($reviewStatusFilter, self::ALLOWED_REVIEW_FILTERS, true)) {
@@ -350,7 +375,10 @@ class InquiryController extends Controller
             'type' => $typeFilter,
         ];
 
-        $baseQuery = Inquiry::query()
+        $baseQuery = $this->filterInquiryQueryForReviewer(
+            Inquiry::query(),
+            $authUser
+        )
             ->whereNotNull('response_body')
             ->where('response_body', '!=', '');
 
@@ -378,7 +406,8 @@ class InquiryController extends Controller
 
     public function reviewerShow(Request $request, Inquiry $inquiry): View
     {
-        $this->ensureReviewer($request);
+        $authUser = $this->ensureReviewer($request);
+        $this->ensureReviewerCanAccessInquiry($authUser, $inquiry);
 
         if (! filled($inquiry->response_body)) {
             abort(404);
@@ -389,23 +418,23 @@ class InquiryController extends Controller
         return view('dashboards.reviewer-review', compact('inquiry'));
     }
 
-    public function reviewerReview(Request $request, Inquiry $inquiry): RedirectResponse
+    public function reviewerReview(ReviewerReviewRequest $request, Inquiry $inquiry): RedirectResponse
     {
         $authUser = $this->ensureReviewer($request);
+        $this->ensureReviewerCanAccessInquiry($authUser, $inquiry);
 
-        $data = $request->validate([
-            'review_action' => ['required', 'in:approve,return'],
-            'status' => ['nullable', 'in:in_progress,answered,needs_info,closed'],
-            'priority' => ['nullable', 'in:normal,urgent,very_urgent'],
-            'response_type' => ['nullable', 'in:final,partial,request_info'],
-            'follow_up_date' => ['nullable', 'date'],
-            'response_body' => ['required', 'string'],
-            'internal_note' => ['nullable', 'string'],
-            'review_note' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
+        $reviewAction = $validated['review_action'];
 
-        $reviewAction = $data['review_action'];
-        unset($data['review_action']);
+        $data = collect($validated)->only([
+            'status',
+            'priority',
+            'response_type',
+            'follow_up_date',
+            'response_body',
+            'internal_note',
+            'review_note',
+        ])->all();
 
         $data['status'] = $data['status'] ?? ($reviewAction === 'return' ? 'needs_info' : ($inquiry->status ?: 'answered'));
         $data['priority'] = $data['priority'] ?? ($inquiry->priority ?: 'normal');
@@ -422,6 +451,11 @@ class InquiryController extends Controller
             : null;
 
         $inquiry->update($data);
+        AuditLogger::security($request, 'inquiries.reviewer.review', [
+            'inquiry_id' => $inquiry->id,
+            'review_action' => $reviewAction,
+            'review_status' => $data['review_status'] ?? null,
+        ], targetType: Inquiry::class, targetId: $inquiry->id);
 
         return redirect()
             ->route('dashboard.reviewer')
@@ -430,8 +464,7 @@ class InquiryController extends Controller
 
     private function ensureResponder(Request $request): AppUser
     {
-        $authUserId = (int) $request->session()->get('auth_app_user_id');
-        $authUser = AppUser::query()->find($authUserId);
+        $authUser = AppAuth::user($request);
 
         if (! $authUser) {
             abort(403);
@@ -448,8 +481,7 @@ class InquiryController extends Controller
 
     private function ensureReviewer(Request $request): AppUser
     {
-        $authUserId = (int) $request->session()->get('auth_app_user_id');
-        $authUser = AppUser::query()->find($authUserId);
+        $authUser = AppAuth::user($request);
 
         if (! $authUser) {
             abort(403);
@@ -482,6 +514,47 @@ class InquiryController extends Controller
         }
     }
 
+    private function filterInquiryQueryForReviewer(Builder $query, AppUser $authUser): Builder
+    {
+        if (
+            ! (bool) config('inquiry.reviewer_isolation.enabled', true)
+            || $authUser->role === 'admin'
+            || $authUser->hasRole('admin')
+        ) {
+            return $query;
+        }
+
+        if ((bool) config('inquiry.reviewer_isolation.by_type', true)) {
+            $scopes = $authUser->normalizedResponderScopes();
+
+            if ($scopes !== [] && ! in_array('all', $scopes, true)) {
+                $query->whereIn('inquiry_type', $scopes);
+            }
+        }
+
+        if ((bool) config('inquiry.reviewer_isolation.by_division', true)) {
+            $division = trim((string) $authUser->division);
+
+            if ($division !== '') {
+                $query->whereHas('asker', fn (Builder $askerQ) => $askerQ->where('division', $division));
+            }
+        }
+
+        return $query;
+    }
+
+    private function ensureReviewerCanAccessInquiry(AppUser $authUser, Inquiry $inquiry): void
+    {
+        $allowed = $this->filterInquiryQueryForReviewer(
+            Inquiry::query()->whereKey($inquiry->id),
+            $authUser
+        )->exists();
+
+        if (! $allowed) {
+            abort(403);
+        }
+    }
+
     private function applyStatusFilter(Builder $query, string $statusFilter): Builder
     {
         if ($statusFilter === 'answered') {
@@ -501,8 +574,7 @@ class InquiryController extends Controller
 
     private function ensureAsker(Request $request): void
     {
-        $authUserId = (int) $request->session()->get('auth_app_user_id');
-        $authUser = AppUser::query()->find($authUserId);
+        $authUser = AppAuth::user($request);
 
         if (! $authUser) {
             abort(403);
@@ -513,5 +585,20 @@ class InquiryController extends Controller
             && ! $authUser->can('inquiries.asker.view')) {
             abort(403);
         }
+    }
+
+    private function validateOptionalDateFilters(Request $request): void
+    {
+        $request->validate([
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+        ]);
+    }
+
+    private function storeUploadedAttachment(UploadedFile $file, string $directory): string
+    {
+        $disk = (string) config('inquiry.attachment.disk', 'local');
+
+        return $file->store($directory, $disk);
     }
 }

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AppUser;
+use App\Support\AppAuth;
+use App\Support\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -75,6 +77,11 @@ class MemberPermissionController extends Controller
             (string) $user->role
         );
         $user->save();
+        AuditLogger::security($request, 'permissions.members.store', [
+            'target_user_id' => $user->id,
+            'roles' => $roles,
+            'permissions_count' => count($permissions),
+        ], targetType: AppUser::class, targetId: $user->id);
 
         return redirect()->route('permissions.members.index')->with('success', 'تمت إضافة صلاحيات المنتسب بنجاح.');
     }
@@ -108,14 +115,24 @@ class MemberPermissionController extends Controller
             (string) $user->role
         );
         $user->save();
+        AuditLogger::security($request, 'permissions.members.update', [
+            'target_user_id' => $user->id,
+            'roles' => $roles,
+            'permissions_count' => count($permissions),
+        ], targetType: AppUser::class, targetId: $user->id);
 
         return redirect()->route('permissions.members.index')->with('success', 'تم تحديث صلاحيات المنتسب بنجاح.');
     }
 
     private function resolveAuthUser(Request $request): AppUser
     {
-        $authUserId = (int) $request->session()->get('auth_app_user_id');
-        return AppUser::query()->findOrFail($authUserId);
+        $user = AppAuth::user($request);
+
+        if (! $user) {
+            abort(403);
+        }
+
+        return $user;
     }
 
     private function ensureCanViewMembersPermissions(Request $request): void
