@@ -38,7 +38,6 @@ class AppUser extends Authenticatable
     protected $fillable = [
         'username',
         'password',
-        'password_confirmation',
         'employee_number',
         'badge_number',
         'division',
@@ -53,12 +52,11 @@ class AppUser extends Authenticatable
 
     protected $hidden = [
         'password',
-        'password_confirmation',
     ];
 
     public static function sanitizeResponderScopes(?array $scopes, string $role): array
     {
-        if (! in_array($role, ['responder', 'admin'], true)) {
+        if (! in_array($role, ['responder', 'reviewer', 'admin'], true)) {
             return [];
         }
 

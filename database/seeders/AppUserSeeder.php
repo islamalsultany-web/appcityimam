@@ -14,7 +14,6 @@ class AppUserSeeder extends Seeder
             ['username' => 'admin'],
             [
                 'password' => Hash::make('admin1234'),
-                'password_confirmation' => 'admin1234',
                 'employee_number' => '1001',
                 'badge_number' => '9001',
                 'division' => 'شعبة الإدارة',

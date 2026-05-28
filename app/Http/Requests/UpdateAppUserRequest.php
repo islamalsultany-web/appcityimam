@@ -2,15 +2,19 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\AuthorizesAppPermissions;
 use App\Models\AppUser;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class UpdateAppUserRequest extends FormRequest
 {
+    use AuthorizesAppPermissions;
+
     public function authorize(): bool
     {
-        return true;
+        return $this->appCan('users.update');
     }
 
     public function rules(): array
@@ -24,8 +28,8 @@ class UpdateAppUserRequest extends FormRequest
                 'max:60',
                 Rule::unique('app_users', 'username')->ignore($userId),
             ],
-            'password' => ['required', 'string', 'max:60', 'same:password_confirmation'],
-            'password_confirmation' => ['required', 'string', 'max:60'],
+            'password' => ['required', 'string', 'confirmed', Password::defaults()],
+            'password_confirmation' => ['required', 'string'],
             'employee_number' => ['nullable', 'string', 'max:40'],
             'badge_number' => ['nullable', 'string', 'max:40'],
             'division' => ['nullable', 'string', 'max:80'],

@@ -21,7 +21,6 @@ class AppUserFactory extends Factory
         return [
             'username' => fake()->unique()->userName(),
             'password' => Hash::make($plainPassword),
-            'password_confirmation' => $plainPassword,
             'employee_number' => (string) fake()->numberBetween(1000, 99999),
             'badge_number' => (string) fake()->numberBetween(1000, 99999),
             'division' => fake()->randomElement(['شعبة الآليات', 'شعبة الفندق', 'شعبة الإدارة']),
