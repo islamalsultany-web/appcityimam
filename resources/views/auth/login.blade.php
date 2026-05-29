@@ -127,11 +127,11 @@
                 <div class="error">{{ $errors->first() }}</div>
             @endif
 
-            <p class="hint">ادخل اسم المستخدم وكلمة السر للوصول إلى النظام.</p>
+            <p class="hint">يمكنك الدخول بالرقم الوظيفي أو اسم المستخدم. كلمة المرور الافتراضية للمنتسبين المستوردين: نفس الرقم الوظيفي.</p>
 
             <div class="field">
-                <label for="username">اسم المستخدم</label>
-                <input id="username" name="username" value="{{ old('username') }}" required autofocus>
+                <label for="username">اسم المستخدم أو الرقم الوظيفي</label>
+                <input id="username" name="username" value="{{ old('username') }}" required autofocus autocomplete="username">
             </div>
 
             <div class="field">

@@ -189,7 +189,8 @@ body {
     justify-content: flex-end;
 }
 
-.top-actions button {
+.top-actions button,
+.top-actions .portal-action-btn {
     border: 0;
     background: #ffffff;
     border-radius: 10px;
@@ -197,6 +198,25 @@ body {
     border: 1px solid rgba(0, 0, 0, 0.12);
     cursor: pointer;
     font-family: inherit;
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+    font-size: inherit;
+}
+
+.top-actions .portal-auth-form {
+    display: inline;
+    margin: 0;
+}
+
+.top-actions .portal-user-label {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 11px;
+    border-radius: 10px;
+    background: rgba(243, 197, 66, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    font-size: 0.85rem;
 }
 
 .layout {
@@ -675,7 +695,7 @@ body {
             <img class="title-image" src="brand-title-clean.png" alt="مدينة الامام الحسين (عليه السلام) للزائرين" onerror="this.style.display='none';">
         </div>
         <div class="header-image-wrap">
-            <img src="a.jpg" alt="صورة تزيينية" class="header-image">
+            <img src="{{ route('decorative.image') }}" alt="صورة تزيينية" class="header-image" onerror="this.style.display='none';">
         </div>
     </div>
  <div class="center-group">
@@ -691,8 +711,18 @@ body {
         <button id="sidebarToggle" type="button" aria-label="إخفاء أو إظهار العمود الجانبي">إخفاء العمود</button>
         <button id="resetOrder" type="button" aria-label="إعادة ترتيب البرامج">إعادة الترتيب</button>
         <button id="themeToggle" type="button" aria-label="تبديل الوضع">الوضع الداكن</button>
-        <button type="button" onclick="window.location.href='/login'">تسجيل الدخول</button>
-        <button type="button" onclick="window.location.href='/logout-home'">تسجيل خروج</button>
+        @if ($isAuthenticated)
+            <span class="portal-user-label" title="المستخدم الحالي">{{ $authUsername }}</span>
+            @if ($dashboardRoute)
+                <a class="portal-action-btn" href="{{ route($dashboardRoute) }}">لوحتي</a>
+            @endif
+            <form class="portal-auth-form" method="POST" action="{{ route('logout.home') }}">
+                @csrf
+                <button type="submit">تسجيل خروج</button>
+            </form>
+        @else
+            <a class="portal-action-btn" href="{{ route('login.form') }}">تسجيل الدخول</a>
+        @endif
     </div>
 </header>
 
@@ -719,7 +749,7 @@ body {
 
     <main class="main">
         <h2 class="section-title">بوابة المنتسب الرقمية</h2>
-        <a class="app-card" data-id="hr" data-title="الخدمات الادارية" href="https://hr.cityimam.com/" target="_blank" rel="noopener noreferrer" draggable="true">
+        <a class="app-card" data-id="hr" data-title="الخدمات الادارية" href="{{ $portalLinks['hr'] }}" target="_blank" rel="noopener noreferrer" draggable="true">
             <h3>الخدمات الادارية</h3>
             <div class="icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
@@ -731,7 +761,7 @@ body {
             </div>
         </a>
 
-        <a class="app-card" data-id="mony" data-title="الخدمات المالية" href="https://mony.cityimam.com/" target="_blank" rel="noopener noreferrer" draggable="true">
+        <a class="app-card" data-id="mony" data-title="الخدمات المالية" href="{{ $portalLinks['finance'] }}" target="_blank" rel="noopener noreferrer" draggable="true">
             <h3>الخدمات المالية</h3>
             <div class="icon gold" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
@@ -743,7 +773,7 @@ body {
             </div>
         </a>
 
-        <a class="app-card" data-id="asset" data-title="ادارة الموجودات الثابتة" href="https://assetcity.cityimam.com/" target="_blank" rel="noopener noreferrer" draggable="true">
+        <a class="app-card" data-id="asset" data-title="ادارة الموجودات الثابتة" href="{{ $portalLinks['assets'] }}" target="_blank" rel="noopener noreferrer" draggable="true">
             <h3>ادارة الموجودات الثابتة</h3>
             <div class="icon cyan" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
@@ -754,7 +784,7 @@ body {
             </div>
         </a>
 
-        <a class="app-card" data-id="support" data-title="الاستفسار والدعم" href="/login" draggable="true">
+        <a class="app-card" data-id="support" data-title="الاستفسار والدعم" href="{{ $inquiryUrl }}" draggable="true">
             <h3>الاستفسار والدعم</h3>
             <div class="icon red" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
@@ -845,13 +875,28 @@ function setupSearch() {
         return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
+    function escapeHtml(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function highlightText(text, query) {
         if (!query) {
-            return text;
+            return escapeHtml(text);
         }
         var safeQuery = escapeRegex(query);
-        var regex = new RegExp('(' + safeQuery + ')', 'g');
-        return text.replace(regex, '<mark>$1</mark>');
+        var regex = new RegExp('(' + safeQuery + ')', 'gi');
+        var parts = String(text).split(regex);
+        return parts.map(function (part) {
+            if (part.toLowerCase() === query.toLowerCase()) {
+                return '<mark>' + escapeHtml(part) + '</mark>';
+            }
+            return escapeHtml(part);
+        }).join('');
     }
 
     function applyFilter() {

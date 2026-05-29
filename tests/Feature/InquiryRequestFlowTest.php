@@ -149,7 +149,7 @@ class InquiryRequestFlowTest extends TestCase
     public function test_reviewer_can_approve_responder_answer(): void
     {
         $asker = $this->createAskerUser();
-        $reviewer = $this->createReviewerUser();
+        $reviewer = $this->createReviewerUser($asker->division);
         $inquiry = Inquiry::create([
             'asker_user_id' => $asker->id,
             'title' => 'استفسار للتدقيق',
@@ -217,12 +217,13 @@ class InquiryRequestFlowTest extends TestCase
         return $responder;
     }
 
-    private function createReviewerUser(): AppUser
+    private function createReviewerUser(?string $division = null): AppUser
     {
         Role::findOrCreate('reviewer', 'web');
 
         $reviewer = AppUser::factory()->create([
             'role' => 'reviewer',
+            'division' => $division,
             'responder_scopes' => [],
         ]);
 

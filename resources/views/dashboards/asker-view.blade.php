@@ -44,6 +44,18 @@
         <li><strong>حالة التدقيق:</strong> <span class="role-chip {{ $inquiry->reviewStatusBadgeClass() }}">{{ $inquiry->reviewStatusLabel() }}</span></li>
         <li class="full" style="grid-column: 1 / -1;"><strong>عنوان الاستفسار:</strong> {{ $inquiry->title }}</li>
         <li class="full" style="grid-column: 1 / -1;"><strong>نص الاستفسار:</strong> {{ $inquiry->body }}</li>
+        @if ($inquiry->attachment_path)
+            <li class="full" style="grid-column: 1 / -1;">
+                <strong>مرفق الاستفسار:</strong>
+                <a href="{{ route('inquiries.attachments.download', ['inquiry' => $inquiry, 'field' => 'attachment']) }}">تنزيل المرفق</a>
+            </li>
+        @endif
         <li class="full" style="grid-column: 1 / -1;"><strong>الإجابة:</strong> {{ $inquiry->publicResponseBody() ?: $inquiry->publicResponsePlaceholder() }}</li>
+        @if ($inquiry->response_attachment_path && $inquiry->isResponseApproved())
+            <li class="full" style="grid-column: 1 / -1;">
+                <strong>مرفق الإجابة:</strong>
+                <a href="{{ route('inquiries.attachments.download', ['inquiry' => $inquiry, 'field' => 'response']) }}">تنزيل مرفق الإجابة</a>
+            </li>
+        @endif
     </ul>
 @endsection

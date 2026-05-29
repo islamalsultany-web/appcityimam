@@ -523,6 +523,9 @@
             && $hasSidebarAccess(['inquiries.responder.report.print', 'inquiries.responder.manage'], ['responder']);
         $showReviewerDashboardLink = \Illuminate\Support\Facades\Route::has('dashboard.reviewer')
             && $hasSidebarAccess(['inquiries.reviewer.view', 'inquiries.reviewer.manage'], ['reviewer']);
+        $showAuditLogsLink = \Illuminate\Support\Facades\Route::has('security.audit-logs')
+            && $authUser
+            && ($authUser->role === 'admin' || $authUser->hasRole('admin'));
     @endphp
 
     <header class="topbar">
@@ -558,6 +561,9 @@
                     @if ($showPermissionsLink)
                         <a class="sidebar-link {{ request()->routeIs('permissions.members.*') ? 'active' : '' }}" href="{{ route('permissions.members.index') }}">الصلاحيات</a>
                     @endif
+                    @if ($showAuditLogsLink)
+                        <a class="sidebar-link {{ request()->routeIs('security.audit-logs') ? 'active' : '' }}" href="{{ route('security.audit-logs') }}">سجل التدقيق</a>
+                    @endif
 
                     @if ($showAskerDashboardLink || $showAskerCreateLink)
                         <div class="sidebar-section-title">صفحات المستفسر</div>
@@ -589,7 +595,10 @@
 
                     @if ($currentRole)
                         <div class="sidebar-section-title">الحساب</div>
-                        <a class="sidebar-link" href="{{ route('logout.home') }}">تسجيل خروج</a>
+                        <form method="POST" action="{{ route('logout.home') }}" style="margin:0;">
+                            @csrf
+                            <button type="submit" class="sidebar-link" style="width:100%;text-align:start;background:none;border:0;cursor:pointer;font:inherit;color:inherit;padding:10px 12px;">تسجيل خروج</button>
+                        </form>
                     @endif
                 </nav>
             </aside>
