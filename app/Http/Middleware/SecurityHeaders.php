@@ -12,6 +12,8 @@ class SecurityHeaders
     {
         $response = $next($request);
 
+        $response->headers->remove('X-Powered-By');
+
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -20,9 +22,9 @@ class SecurityHeaders
         $csp = implode('; ', [
             "default-src 'self'",
             "script-src 'self' 'unsafe-inline'",
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-            "font-src 'self' https://fonts.gstatic.com data:",
-            "img-src 'self' data: https:",
+            "style-src 'self' 'unsafe-inline'",
+            "font-src 'self' data:",
+            "img-src 'self' data:",
             "connect-src 'self' https://api.open-meteo.com",
             "frame-ancestors 'self'",
             "base-uri 'self'",

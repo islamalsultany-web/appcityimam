@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
-use App\Support\AppAuth;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -49,12 +48,6 @@ class AuditLogController extends Controller
 
     public function index(Request $request): View
     {
-        $user = AppAuth::user($request);
-
-        if (! $user || ! ($user->role === 'admin' || $user->hasRole('admin'))) {
-            abort(403);
-        }
-
         $validated = $request->validate([
             'actor' => ['nullable', 'string', 'max:120'],
             'action' => ['nullable', 'string', 'max:120'],

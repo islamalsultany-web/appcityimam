@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>مدينة الامام الحسين (عليه السلام) للزائرين</title>
+<link rel="stylesheet" href="{{ asset('css/cairo-font.css') }}">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
 
 :root {
     --surface: rgba(245, 245, 245, 0.92);
@@ -39,7 +39,7 @@ body {
     color: var(--ink);
     background:
         linear-gradient(180deg, rgba(0, 0, 0, 0.56), rgba(0, 0, 0, 0.58)),
-        url('https://images.unsplash.com/photo-1603451731239-0ee2f0865dc2?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat fixed;
+        url('{{ asset('images/portal-background.jpg') }}') center/cover no-repeat fixed;
 }
 
 .topbar {

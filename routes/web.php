@@ -35,7 +35,9 @@ Route::middleware('app.auth')->group(function (): void {
 	Route::post('/user/password', [AuthController::class, 'updatePassword'])->name('user.password.update');
 	Route::get('/user/credentials', [AuthController::class, 'showCredentialsSetup'])->name('user.credentials.setup');
 	Route::post('/user/credentials', [AuthController::class, 'updateCredentials'])->name('user.credentials.update');
-	Route::get('/security/audit-logs', [AuditLogController::class, 'index'])->name('security.audit-logs');
+	Route::get('/security/audit-logs', [AuditLogController::class, 'index'])
+		->middleware('super.admin')
+		->name('security.audit-logs');
 
 	Route::middleware('secure.credentials')->group(function (): void {
 		Route::get('/inquiries/{inquiry}/attachments/{field}', [InquiryAttachmentController::class, 'download'])

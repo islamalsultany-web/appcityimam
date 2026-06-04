@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureAppUserAuthenticated;
 use App\Http\Middleware\EnsurePermission;
 use App\Http\Middleware\EnsureSecureCredentialsChanged;
+use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => EnsurePermission::class,
             'secure.credentials' => EnsureSecureCredentialsChanged::class,
             'asker.credentials' => EnsureSecureCredentialsChanged::class,
+            'super.admin' => EnsureSuperAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
