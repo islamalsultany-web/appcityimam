@@ -37,9 +37,13 @@ body {
     min-height: 100vh;
     font-family: 'Cairo', sans-serif;
     color: var(--ink);
-    background:
-        linear-gradient(180deg, rgba(0, 0, 0, 0.56), rgba(0, 0, 0, 0.58)),
-        url('{{ asset('images/portal-background.jpg') }}') center/cover no-repeat fixed;
+    background-color: #0f172a;
+    background-image:
+        radial-gradient(ellipse 85% 65% at 50% 0%, rgba(243, 197, 66, 0.14), transparent 58%),
+        radial-gradient(ellipse 70% 50% at 100% 100%, rgba(22, 146, 255, 0.12), transparent 55%),
+        radial-gradient(ellipse 60% 45% at 0% 100%, rgba(226, 74, 59, 0.08), transparent 50%),
+        linear-gradient(165deg, #0b1220 0%, #1e293b 42%, #111827 100%);
+    background-attachment: fixed;
 }
 
 .topbar {
@@ -51,6 +55,13 @@ body {
     align-items: center;
     gap: 18px;
     padding: 10px 18px;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 208px 1fr;
+    gap: 12px;
+    padding: 12px;
 }
 
 .brand {
@@ -179,7 +190,6 @@ body {
     object-fit: contain;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-
 }
 
 .top-actions {
@@ -217,13 +227,6 @@ body {
     background: rgba(243, 197, 66, 0.2);
     border: 1px solid rgba(0, 0, 0, 0.1);
     font-size: 0.85rem;
-}
-
-.layout {
-    display: grid;
-    grid-template-columns: 208px 1fr;
-    gap: 12px;
-    padding: 12px;
 }
 
 .layout.sidebar-collapsed {
@@ -801,8 +804,20 @@ body {
 <script>
 function updateClock() {
     var now = new Date();
-    var time = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    var date = now.toLocaleDateString('ar-IQ', { weekday: 'long', day: 'numeric', month: 'long' });
+    var formatted = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Baghdad',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    }).format(now);
+    var suffix = /AM/i.test(formatted) ? 'ص' : 'م';
+    var time = formatted.replace(/\s?(AM|PM)/i, '').trim() + ' ' + suffix;
+    var date = now.toLocaleDateString('ar-IQ', {
+        timeZone: 'Asia/Baghdad',
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+    });
     document.getElementById('time').textContent = time;
     document.getElementById('date').textContent = date;
 }

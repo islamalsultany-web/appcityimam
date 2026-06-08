@@ -41,9 +41,13 @@
             min-height: 100vh;
             font-family: 'Cairo', sans-serif;
             color: var(--ink);
-            background:
-                linear-gradient(180deg, rgba(0,0,0,0.56), rgba(0,0,0,0.58)),
-                url('{{ asset('images/portal-background.jpg') }}') center/cover no-repeat fixed;
+            background-color: #0f172a;
+            background-image:
+                radial-gradient(ellipse 85% 65% at 50% 0%, rgba(243, 197, 66, 0.14), transparent 58%),
+                radial-gradient(ellipse 70% 50% at 100% 100%, rgba(22, 146, 255, 0.12), transparent 55%),
+                radial-gradient(ellipse 60% 45% at 0% 100%, rgba(226, 74, 59, 0.08), transparent 50%),
+                linear-gradient(165deg, #0b1220 0%, #1e293b 42%, #111827 100%);
+            background-attachment: fixed;
         }
 
         /* ── Topbar ── */
