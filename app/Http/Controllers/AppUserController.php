@@ -79,9 +79,20 @@ class AppUserController extends Controller
     {
         set_time_limit(300);
 
-        DB::transaction(function () use ($request): void {
-            Excel::import(new AppUsersImport(), $request->file('excel_file'));
-        });
+        try {
+            DB::transaction(function () use ($request): void {
+                Excel::import(new AppUsersImport(), $request->file('excel_file'));
+            });
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return redirect()
+                ->route('users.excel')
+                ->withErrors([
+                    'excel_file' => $this->excelImportErrorMessage($exception),
+                ]);
+        }
+
         AuditLogger::security($request, 'users.excel.import');
 
         return redirect()->route('users.excel')->with('success', 'تم استيراد بيانات المستخدمين بنجاح.');
@@ -177,6 +188,25 @@ class AppUserController extends Controller
         return redirect()
             ->route('users.index')
             ->with('success', "تم حذف {$deletedCount} مستخدم. تم الإبقاء على حسابك ومدير النظام الأساسي.");
+    }
+
+    private function excelImportErrorMessage(\Throwable $exception): string
+    {
+        $message = $exception->getMessage();
+
+        if (str_contains($message, 'Duplicate') || str_contains($message, '1062')) {
+            return 'فشل الاستيراد: يوجد اسم مستخدم مكرر في الملف أو في قاعدة البيانات. تأكد أن كل اسم مستخدم فريد.';
+        }
+
+        if (str_contains($message, 'RoleDoesNotExist') || str_contains($message, 'roles')) {
+            return 'فشل الاستيراد: أدوار النظام غير مهيأة على السيرفر. نفّذ: php artisan db:seed --class=PermissionSystemSeeder';
+        }
+
+        if (str_contains($message, 'responder_scopes') || str_contains($message, 'Unknown column')) {
+            return 'فشل الاستيراد: قاعدة البيانات على السيرفر تحتاج تحديث. نفّذ: php artisan migrate --force';
+        }
+
+        return 'فشل استيراد الملف. تحقق من ترتيب أعمدة النموذج (اسم المستخدم، كلمة المرور، تأكيد كلمة المرور، الرقم الوظيفي...) أو راجع سجل Laravel على السيرفر.';
     }
 
     private function normalizeUserPayload(array $data): array

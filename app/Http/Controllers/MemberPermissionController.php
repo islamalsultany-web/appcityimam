@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\IndexMemberPermissionsRequest;
 use App\Models\AppUser;
 use App\Support\AppAuth;
 use App\Support\AuditLogger;
@@ -14,13 +15,25 @@ use Spatie\Permission\Models\Role;
 
 class MemberPermissionController extends Controller
 {
-    public function index(Request $request): View
+    public function index(IndexMemberPermissionsRequest $request): View
     {
-        $this->ensureCanViewMembersPermissions($request);
+        $filters = $request->validated();
+        $query = AppUser::query()->with('roles');
 
-        $users = AppUser::query()->with('roles')->latest()->paginate(20);
+        if (! empty($filters['username'])) {
+            $query->where('username', 'like', '%' . trim((string) $filters['username']) . '%');
+        }
 
-        return view('permissions.members-index', compact('users'));
+        if (! empty($filters['employee_number'])) {
+            $query->where('employee_number', 'like', '%' . trim((string) $filters['employee_number']) . '%');
+        }
+
+        $users = $query->latest()->paginate(20)->withQueryString();
+
+        return view('permissions.members-index', [
+            'users' => $users,
+            'filters' => $filters,
+        ]);
     }
 
     public function create(Request $request): View
