@@ -21,7 +21,7 @@
         'other' => 'أخرى',
     ])
 
-    <style>
+    <style nonce="{{ $cspNonce }}">
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));

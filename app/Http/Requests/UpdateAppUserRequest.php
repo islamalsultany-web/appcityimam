@@ -4,9 +4,9 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\AuthorizesAppPermissions;
 use App\Models\AppUser;
+use App\Support\EmployeeCredentialRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class UpdateAppUserRequest extends FormRequest
 {
@@ -19,16 +19,13 @@ class UpdateAppUserRequest extends FormRequest
 
     public function rules(): array
     {
-        $userId = $this->route('user')?->id ?? $this->route('user');
+        $routeUser = $this->route('user');
+        $userId = $routeUser instanceof AppUser ? $routeUser->id : null;
+        $employeeNumber = trim((string) $this->input('employee_number', ''));
 
         return [
-            'username' => [
-                'required',
-                'string',
-                'max:60',
-                Rule::unique('app_users', 'username')->ignore($userId),
-            ],
-            'password' => ['required', 'string', 'confirmed', Password::defaults()],
+            'username' => EmployeeCredentialRules::usernameRules($employeeNumber, $userId),
+            'password' => EmployeeCredentialRules::passwordRules($employeeNumber),
             'password_confirmation' => ['required', 'string'],
             'employee_number' => ['nullable', 'string', 'max:40'],
             'badge_number' => ['nullable', 'string', 'max:40'],
@@ -38,5 +35,10 @@ class UpdateAppUserRequest extends FormRequest
             'responder_scopes' => ['nullable', 'array'],
             'responder_scopes.*' => ['string', Rule::in(AppUser::RESPONDER_SCOPE_OPTIONS)],
         ];
+    }
+
+    public function messages(): array
+    {
+        return EmployeeCredentialRules::validationMessages();
     }
 }

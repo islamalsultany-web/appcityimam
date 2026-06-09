@@ -3,6 +3,10 @@
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    <FilesMatch "\.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|txt|xml)$">
+        Header always set Content-Security-Policy "default-src 'self'"
+    </FilesMatch>
 </IfModule>
 
 <IfModule mod_rewrite.c>

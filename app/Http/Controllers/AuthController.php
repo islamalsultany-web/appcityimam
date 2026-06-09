@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UpdateAskerCredentialsRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Models\AppUser;
+use App\Support\AdminTwoFactor;
 use App\Support\AppHomeRoute;
 use App\Support\AppUserLogin;
 use App\Support\EmployeeCredentialSecurity;
@@ -44,9 +45,13 @@ class AuthController extends Controller
 
         $loginId = trim($credentials['username']);
         $rateLimitKey = 'login:' . Str::lower($loginId) . '|' . $request->ip();
+        $ipRateLimitKey = 'login-ip:' . $request->ip();
 
-        if (RateLimiter::tooManyAttempts($rateLimitKey, 5)) {
-            $seconds = RateLimiter::availableIn($rateLimitKey);
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 5) || RateLimiter::tooManyAttempts($ipRateLimitKey, 25)) {
+            $seconds = max(
+                RateLimiter::availableIn($rateLimitKey),
+                RateLimiter::availableIn($ipRateLimitKey)
+            );
 
             throw ValidationException::withMessages([
                 'username' => "محاولات تسجيل دخول كثيرة. أعد المحاولة بعد {$seconds} ثانية.",
@@ -57,6 +62,7 @@ class AuthController extends Controller
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             RateLimiter::hit($rateLimitKey, 60);
+            RateLimiter::hit($ipRateLimitKey, 300);
             AuditLogger::security($request, 'auth.login.failed', [
                 'login_id' => $loginId,
             ]);
@@ -67,6 +73,7 @@ class AuthController extends Controller
         }
 
         RateLimiter::clear($rateLimitKey);
+        RateLimiter::clear($ipRateLimitKey);
 
         $request->session()->regenerate();
         Auth::login($user);
@@ -83,6 +90,18 @@ class AuthController extends Controller
             return redirect()
                 ->route('user.credentials.setup')
                 ->with('warning', EmployeeCredentialSecurity::warningMessage());
+        }
+
+        if (AdminTwoFactor::appliesTo($user)) {
+            AdminTwoFactor::clearSession($request);
+
+            if (! AdminTwoFactor::isConfigured($user)) {
+                return redirect()
+                    ->route('user.two-factor.setup')
+                    ->with('warning', 'يجب تفعيل المصادقة الثنائية (2FA) لحساب مدير النظام.');
+            }
+
+            return redirect()->route('user.two-factor.verify');
         }
 
         return redirect()->route(AppHomeRoute::forRole($user->role));
@@ -140,6 +159,7 @@ class AuthController extends Controller
             ]);
         }
 
+        AdminTwoFactor::clearSession($request);
         Auth::logout();
         $request->session()->forget(['auth_app_user_id', 'auth_app_username', 'auth_app_role']);
         $request->session()->invalidate();
@@ -158,6 +178,7 @@ class AuthController extends Controller
             ]);
         }
 
+        AdminTwoFactor::clearSession($request);
         Auth::logout();
         $request->session()->forget(['auth_app_user_id', 'auth_app_username', 'auth_app_role']);
         $request->session()->invalidate();

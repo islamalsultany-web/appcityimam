@@ -21,11 +21,11 @@ class MemberPermissionController extends Controller
         $query = AppUser::query()->with('roles');
 
         if (! empty($filters['username'])) {
-            $query->where('username', 'like', '%' . trim((string) $filters['username']) . '%');
+            $query->where('username', 'like', '%' . $this->escapeLike(trim((string) $filters['username'])) . '%');
         }
 
         if (! empty($filters['employee_number'])) {
-            $query->where('employee_number', 'like', '%' . trim((string) $filters['employee_number']) . '%');
+            $query->where('employee_number', 'like', '%' . $this->escapeLike(trim((string) $filters['employee_number'])) . '%');
         }
 
         $users = $query->latest()->paginate(20)->withQueryString();
@@ -180,5 +180,10 @@ class MemberPermissionController extends Controller
         }
 
         return $result;
+    }
+
+    private function escapeLike(string $value): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
     }
 }

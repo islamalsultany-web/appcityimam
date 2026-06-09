@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تقرير الاستفسارات</title>
-    <style>
+    <style nonce="{{ $cspNonce }}">
         body { font-family: Tahoma, Arial, sans-serif; margin: 20px; color: #111; }
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: right; }
@@ -34,7 +34,7 @@
         'other' => 'أخرى',
     ])
 
-    <button class="print-btn" onclick="window.print()">طباعة</button>
+    <button class="print-btn" type="button" id="print-page">طباعة</button>
     <h2>تقرير الاستفسارات {{ $statusFilter ? '(' . ($statusLabels[$statusFilter] ?? $statusFilter) . ')' : '(كل الحالات)' }}</h2>
 
     <table>
@@ -68,6 +68,9 @@
         </tbody>
     </table>
 
-    <script>window.addEventListener('load', function () { window.print(); });</script>
+    <script nonce="{{ $cspNonce }}">
+        document.getElementById('print-page')?.addEventListener('click', function () { window.print(); });
+        window.addEventListener('load', function () { window.print(); });
+    </script>
 </body>
 </html>

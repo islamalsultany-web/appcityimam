@@ -4,9 +4,9 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\AuthorizesAppPermissions;
 use App\Models\AppUser;
+use App\Support\EmployeeCredentialRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class StoreAppUserRequest extends FormRequest
 {
@@ -19,9 +19,11 @@ class StoreAppUserRequest extends FormRequest
 
     public function rules(): array
     {
+        $employeeNumber = trim((string) $this->input('employee_number', ''));
+
         return [
-            'username' => ['required', 'string', 'max:60', 'unique:app_users,username'],
-            'password' => ['required', 'string', 'confirmed', Password::defaults()],
+            'username' => EmployeeCredentialRules::usernameRules($employeeNumber),
+            'password' => EmployeeCredentialRules::passwordRules($employeeNumber),
             'password_confirmation' => ['required', 'string'],
             'employee_number' => ['nullable', 'string', 'max:40'],
             'badge_number' => ['nullable', 'string', 'max:40'],
@@ -31,5 +33,10 @@ class StoreAppUserRequest extends FormRequest
             'responder_scopes' => ['nullable', 'array'],
             'responder_scopes.*' => ['string', Rule::in(AppUser::RESPONDER_SCOPE_OPTIONS)],
         ];
+    }
+
+    public function messages(): array
+    {
+        return EmployeeCredentialRules::validationMessages();
     }
 }

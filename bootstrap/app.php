@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\AddCspNonce;
+use App\Http\Middleware\EnsureAdminTwoFactor;
 use App\Http\Middleware\EnsureAppUserAuthenticated;
 use App\Http\Middleware\EnsurePermission;
 use App\Http\Middleware\EnsureSecureCredentialsChanged;
@@ -16,12 +18,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(prepend: [
+            AddCspNonce::class,
+        ]);
+
         $middleware->web(append: [
             SecurityHeaders::class,
         ]);
 
         $middleware->alias([
             'app.auth' => EnsureAppUserAuthenticated::class,
+            'admin.two.factor' => EnsureAdminTwoFactor::class,
             'permission' => EnsurePermission::class,
             'secure.credentials' => EnsureSecureCredentialsChanged::class,
             'asker.credentials' => EnsureSecureCredentialsChanged::class,

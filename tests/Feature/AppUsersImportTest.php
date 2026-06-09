@@ -59,6 +59,23 @@ class AppUsersImportTest extends TestCase
         $this->assertTrue(Hash::check('37364', (string) $second->password));
     }
 
+    public function test_import_rejects_admin_role_from_spreadsheet(): void
+    {
+        Role::findOrCreate('asker', 'web');
+
+        Excel::import(new AppUsersImport(), $this->makeImportPath([
+            ['اسم المستخدم', 'كلمة المرور', 'تأكيد كلمة المرور', 'الرقم الوظيفي', 'رقم الباج', 'الشعبة', 'الوحدة', 'الدور'],
+            ['مستخدم تجريبي', '', '', '90001', '', '', '', 'admin'],
+        ]));
+
+        $user = AppUser::query()->where('employee_number', '90001')->first();
+
+        $this->assertNotNull($user);
+        $this->assertSame('asker', $user->role);
+        $this->assertTrue($user->hasRole('asker'));
+        $this->assertFalse($user->hasRole('admin'));
+    }
+
     public function test_reimport_does_not_reset_password_when_password_cell_is_empty(): void
     {
         Role::findOrCreate('asker', 'web');

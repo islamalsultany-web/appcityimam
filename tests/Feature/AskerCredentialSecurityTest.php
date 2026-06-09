@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\AppUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -31,6 +32,29 @@ class AskerCredentialSecurityTest extends TestCase
 
         $response->assertRedirect(route('user.credentials.setup'));
         $response->assertSessionHas('warning');
+    }
+
+    public function test_asker_cannot_access_users_management_until_credentials_updated(): void
+    {
+        Role::findOrCreate('asker', 'web');
+
+        $asker = AppUser::factory()->create([
+            'role' => 'asker',
+            'username' => '11914',
+            'employee_number' => '11914',
+            'password' => Hash::make('11914'),
+        ]);
+        $asker->assignRole('asker');
+        Permission::findOrCreate('users.index', 'web');
+        $asker->givePermissionTo('users.index');
+
+        $response = $this->withSession([
+            'auth_app_user_id' => $asker->id,
+            'auth_app_username' => $asker->username,
+            'auth_app_role' => $asker->role,
+        ])->get(route('users.index'));
+
+        $response->assertRedirect(route('user.credentials.setup'));
     }
 
     public function test_asker_cannot_access_dashboard_until_credentials_updated(): void

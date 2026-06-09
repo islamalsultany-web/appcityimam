@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\AuthorizesAppPermissions;
+use App\Rules\SecureAttachment;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -37,7 +38,7 @@ class ResponderAnswerRequest extends FormRequest
             'follow_up_date' => ['nullable', 'date'],
             'response_body' => ['required', 'string', 'max:10000'],
             'internal_note' => ['nullable', 'string', 'max:5000'],
-            'response_attachment' => ['nullable', 'file', 'max:' . $maxKb, 'mimes:' . $mimes],
+            'response_attachment' => ['nullable', 'file', 'max:' . $maxKb, new SecureAttachment($mimes)],
         ];
     }
 }

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>طباعة الاستفسار #{{ $inquiry->id }}</title>
-    <style>
+    <style nonce="{{ $cspNonce }}">
         body { font-family: Tahoma, Arial, sans-serif; margin: 24px; color: #111; }
         h1 { margin: 0 0 16px; }
         .meta { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 10px; margin-bottom: 16px; }
@@ -34,7 +34,7 @@
         'other' => 'أخرى',
     ])
 
-    <button class="print-btn" onclick="window.print()">طباعة</button>
+    <button class="print-btn" type="button" id="print-page">طباعة</button>
     <h1>تقرير استفسار #{{ $inquiry->id }}</h1>
 
     <div class="meta">
@@ -49,6 +49,9 @@
         <div class="box full"><strong>نص الإجابة:</strong><br>{{ $inquiry->response_body ?: 'لا توجد إجابة بعد' }}</div>
     </div>
 
-    <script>window.addEventListener('load', function () { window.print(); });</script>
+    <script nonce="{{ $cspNonce }}">
+        document.getElementById('print-page')?.addEventListener('click', function () { window.print(); });
+        window.addEventListener('load', function () { window.print(); });
+    </script>
 </body>
 </html>

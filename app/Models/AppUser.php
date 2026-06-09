@@ -13,6 +13,9 @@ class AppUser extends Authenticatable
 
     public const ROLE_OPTIONS = ['asker', 'responder', 'reviewer', 'admin'];
 
+    /** Roles allowed when bulk-importing users from Excel (admin is excluded). */
+    public const IMPORTABLE_ROLES = ['asker', 'responder', 'reviewer'];
+
     public const ROLE_LABELS = [
         'asker' => 'مستفسر',
         'responder' => 'مجيب',
@@ -38,6 +41,8 @@ class AppUser extends Authenticatable
     protected $fillable = [
         'username',
         'password',
+        'two_factor_secret',
+        'two_factor_confirmed_at',
         'employee_number',
         'badge_number',
         'division',
@@ -48,10 +53,13 @@ class AppUser extends Authenticatable
 
     protected $casts = [
         'responder_scopes' => 'array',
+        'two_factor_secret' => 'encrypted',
+        'two_factor_confirmed_at' => 'datetime',
     ];
 
     protected $hidden = [
         'password',
+        'two_factor_secret',
     ];
 
     public static function sanitizeResponderScopes(?array $scopes, string $role): array

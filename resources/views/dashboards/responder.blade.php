@@ -39,7 +39,7 @@
     ])
     @php($reviewStatusLabels = \App\Models\Inquiry::REVIEW_STATUS_LABELS)
 
-    <style>
+    <style nonce="{{ $cspNonce }}">
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
@@ -296,7 +296,7 @@
         </div>
     @endif
 
-    <script>
+    <script nonce="{{ $cspNonce }}">
         (function () {
             var toggleBtn = document.getElementById('toggleColumnsBtn');
             var panel = document.getElementById('columnsPanel');

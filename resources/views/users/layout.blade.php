@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'إدارة المستخدمين')</title>
     <link rel="stylesheet" href="{{ asset('css/cairo-font.css') }}">
-    <style>
+    <style nonce="{{ $cspNonce }}">
 
         :root {
             --surface: rgba(245, 245, 245, 0.94);

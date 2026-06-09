@@ -40,7 +40,7 @@ class AppUsersImport implements OnEachRow
         $passwordFromFile = $this->clean($source[1] ?? null);
 
         $role = Str::lower((string) ($this->clean($source[7] ?? null) ?? 'asker'));
-        if (! in_array($role, AppUser::ROLE_OPTIONS, true)) {
+        if (! in_array($role, AppUser::IMPORTABLE_ROLES, true)) {
             $role = 'asker';
         }
 
@@ -84,7 +84,7 @@ class AppUsersImport implements OnEachRow
             ], $payload));
         }
 
-        if (in_array($role, AppUser::ROLE_OPTIONS, true)) {
+        if (in_array($role, AppUser::IMPORTABLE_ROLES, true)) {
             Role::findOrCreate($role, 'web');
             $user->syncRoles([$role]);
         }

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>مدينة الامام الحسين (عليه السلام) للزائرين</title>
 <link rel="stylesheet" href="{{ asset('css/cairo-font.css') }}">
-<style>
+<style nonce="{{ $cspNonce }}">
 
 :root {
     --surface: rgba(245, 245, 245, 0.92);
@@ -801,7 +801,7 @@ body {
     </main>
 </section>
 <div id="toastWrap" class="toast-wrap" aria-live="polite"></div>
-<script>
+<script nonce="{{ $cspNonce }}">
 function updateClock() {
     var now = new Date();
     var formatted = new Intl.DateTimeFormat('en-US', {

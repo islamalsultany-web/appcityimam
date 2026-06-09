@@ -19,10 +19,21 @@ class SecurityHeaders
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
 
+        if ($request->isSecure()) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        }
+
+        $nonce = (string) $request->attributes->get('csp_nonce', '');
+        $scriptSrc = $nonce !== '' ? "script-src 'self' 'nonce-{$nonce}'" : "script-src 'self'";
+        // style attributes (style="...") in Blade still need unsafe-inline; scripts are strict via nonce.
+        $styleSrc = $nonce !== ''
+            ? "style-src 'self' 'nonce-{$nonce}' 'unsafe-inline'"
+            : "style-src 'self' 'unsafe-inline'";
+
         $csp = implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline'",
-            "style-src 'self' 'unsafe-inline'",
+            $scriptSrc,
+            $styleSrc,
             "font-src 'self' data:",
             "img-src 'self' data:",
             "connect-src 'self' https://api.open-meteo.com",

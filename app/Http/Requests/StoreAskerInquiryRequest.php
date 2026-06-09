@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\AuthorizesAppPermissions;
+use App\Rules\SecureAttachment;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -37,7 +38,7 @@ class StoreAskerInquiryRequest extends FormRequest
             'inquiry_type' => ['required', Rule::in(self::INQUIRY_TYPES)],
             'priority' => ['required', Rule::in(['normal', 'urgent', 'very_urgent'])],
             'body' => ['required', 'string', 'max:10000'],
-            'attachment' => ['nullable', 'file', 'max:' . $maxKb, 'mimes:' . $mimes],
+            'attachment' => ['nullable', 'file', 'max:' . $maxKb, new SecureAttachment($mimes)],
         ];
     }
 }

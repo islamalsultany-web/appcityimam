@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminTwoFactorController;
 use App\Http\Controllers\AppUserController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
@@ -17,6 +18,23 @@ Route::get('/logout-home', fn () => redirect()->route('home'))->name('logout.hom
 
 Route::get('/index2', [PortalController::class, 'index'])->name('index2');
 Route::redirect('/', '/index2')->name('home');
+Route::get('/robots.txt', function () {
+	return response("User-agent: *\nDisallow:\n", 200, [
+		'Content-Type' => 'text/plain; charset=UTF-8',
+	]);
+})->name('robots');
+
+Route::get('/sitemap.xml', function () {
+	$xml = '<?xml version="1.0" encoding="UTF-8"?>'
+		. '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+		. '<url><loc>' . e(url('/index2')) . '</loc></url>'
+		. '</urlset>';
+
+	return response($xml, 200, [
+		'Content-Type' => 'application/xml; charset=UTF-8',
+	]);
+})->name('sitemap');
+
 Route::get('/decorative-image', function () {
 	if (! file_exists(base_path('a.jpg'))) {
 		abort(404);
@@ -35,11 +53,17 @@ Route::middleware('app.auth')->group(function (): void {
 	Route::post('/user/password', [AuthController::class, 'updatePassword'])->name('user.password.update');
 	Route::get('/user/credentials', [AuthController::class, 'showCredentialsSetup'])->name('user.credentials.setup');
 	Route::post('/user/credentials', [AuthController::class, 'updateCredentials'])->name('user.credentials.update');
-	Route::get('/security/audit-logs', [AuditLogController::class, 'index'])
-		->middleware('super.admin')
-		->name('security.audit-logs');
+	Route::get('/user/two-factor/setup', [AdminTwoFactorController::class, 'showSetup'])->name('user.two-factor.setup');
+	Route::post('/user/two-factor/confirm', [AdminTwoFactorController::class, 'confirmSetup'])->name('user.two-factor.confirm');
+	Route::get('/user/two-factor/verify', [AdminTwoFactorController::class, 'showVerify'])->name('user.two-factor.verify');
+	Route::post('/user/two-factor/verify', [AdminTwoFactorController::class, 'submitVerify'])->name('user.two-factor.verify.submit');
 
+	Route::middleware('admin.two.factor')->group(function (): void {
 	Route::middleware('secure.credentials')->group(function (): void {
+		Route::get('/security/audit-logs', [AuditLogController::class, 'index'])
+			->middleware('super.admin')
+			->name('security.audit-logs');
+
 		Route::get('/inquiries/{inquiry}/attachments/{field}', [InquiryAttachmentController::class, 'download'])
 			->whereIn('field', ['attachment', 'response'])
 			->name('inquiries.attachments.download');
@@ -110,55 +134,56 @@ Route::middleware('app.auth')->group(function (): void {
 		Route::patch('/reviewer/dashboard/{inquiry}', [InquiryController::class, 'reviewerReview'])
 			->middleware('permission:inquiries.reviewer.review')
 			->name('reviewer.inquiries.review');
+
+		Route::delete('/users', [AppUserController::class, 'destroyAll'])
+			->middleware(['permission:users.bulk_delete', 'throttle:3,1'])
+			->name('users.destroyAll');
+
+		Route::get('/users/excel', [AppUserController::class, 'excelPage'])
+			->middleware('permission:users.excel.page')
+			->name('users.excel');
+
+		Route::get('/users/excel/template', [AppUserController::class, 'excelTemplate'])
+			->middleware('permission:users.excel.template')
+			->name('users.excel.template');
+
+		Route::post('/users/excel/import', [AppUserController::class, 'excelImport'])
+			->middleware(['permission:users.excel.import', 'throttle:5,1'])
+			->name('users.excel.import');
+
+		Route::get('/users/excel/export', [AppUserController::class, 'excelExport'])
+			->middleware('permission:users.excel.export')
+			->name('users.excel.export');
+
+		Route::resource('users', AppUserController::class)->middleware([
+			'index' => 'permission:users.index|users.view',
+			'create' => 'permission:users.create',
+			'store' => 'permission:users.store',
+			'show' => 'permission:users.show',
+			'edit' => 'permission:users.edit',
+			'update' => 'permission:users.update',
+			'destroy' => 'permission:users.delete',
+		]);
+
+		Route::get('/permissions/members', [MemberPermissionController::class, 'index'])
+			->middleware('permission:permissions.members.view|permissions.members.edit')
+			->name('permissions.members.index');
+
+		Route::get('/permissions/members/create', [MemberPermissionController::class, 'create'])
+			->middleware('permission:permissions.members.create')
+			->name('permissions.members.create');
+
+		Route::post('/permissions/members', [MemberPermissionController::class, 'store'])
+			->middleware('permission:permissions.members.store')
+			->name('permissions.members.store');
+
+		Route::get('/permissions/members/{user}/edit', [MemberPermissionController::class, 'edit'])
+			->middleware('permission:permissions.members.edit')
+			->name('permissions.members.edit');
+
+		Route::put('/permissions/members/{user}', [MemberPermissionController::class, 'update'])
+			->middleware('permission:permissions.members.update')
+			->name('permissions.members.update');
 	});
-
-	Route::delete('/users', [AppUserController::class, 'destroyAll'])
-		->middleware(['permission:users.bulk_delete', 'throttle:3,1'])
-		->name('users.destroyAll');
-
-	Route::get('/users/excel', [AppUserController::class, 'excelPage'])
-		->middleware('permission:users.excel.page')
-		->name('users.excel');
-
-	Route::get('/users/excel/template', [AppUserController::class, 'excelTemplate'])
-		->middleware('permission:users.excel.template')
-		->name('users.excel.template');
-
-	Route::post('/users/excel/import', [AppUserController::class, 'excelImport'])
-		->middleware(['permission:users.excel.import', 'throttle:5,1'])
-		->name('users.excel.import');
-
-	Route::get('/users/excel/export', [AppUserController::class, 'excelExport'])
-		->middleware('permission:users.excel.export')
-		->name('users.excel.export');
-
-	Route::resource('users', AppUserController::class)->middleware([
-		'index' => 'permission:users.index|users.view',
-		'create' => 'permission:users.create',
-		'store' => 'permission:users.store',
-		'show' => 'permission:users.show',
-		'edit' => 'permission:users.edit',
-		'update' => 'permission:users.update',
-		'destroy' => 'permission:users.delete',
-	]);
-
-	Route::get('/permissions/members', [MemberPermissionController::class, 'index'])
-		->middleware('permission:permissions.members.view|permissions.members.edit')
-		->name('permissions.members.index');
-
-	Route::get('/permissions/members/create', [MemberPermissionController::class, 'create'])
-		->middleware('permission:permissions.members.create')
-		->name('permissions.members.create');
-
-	Route::post('/permissions/members', [MemberPermissionController::class, 'store'])
-		->middleware('permission:permissions.members.store')
-		->name('permissions.members.store');
-
-	Route::get('/permissions/members/{user}/edit', [MemberPermissionController::class, 'edit'])
-		->middleware('permission:permissions.members.edit')
-		->name('permissions.members.edit');
-
-	Route::put('/permissions/members/{user}', [MemberPermissionController::class, 'update'])
-		->middleware('permission:permissions.members.update')
-		->name('permissions.members.update');
+	});
 });

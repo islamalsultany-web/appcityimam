@@ -27,23 +27,23 @@ class AppUserController extends Controller
         $query = AppUser::query();
 
         if (! empty($filters['username'])) {
-            $query->where('username', 'like', '%' . trim((string) $filters['username']) . '%');
+            $query->where('username', 'like', '%' . $this->escapeLike(trim((string) $filters['username'])) . '%');
         }
 
         if (! empty($filters['employee_number'])) {
-            $query->where('employee_number', 'like', '%' . trim((string) $filters['employee_number']) . '%');
+            $query->where('employee_number', 'like', '%' . $this->escapeLike(trim((string) $filters['employee_number'])) . '%');
         }
 
         if (! empty($filters['badge_number'])) {
-            $query->where('badge_number', 'like', '%' . trim((string) $filters['badge_number']) . '%');
+            $query->where('badge_number', 'like', '%' . $this->escapeLike(trim((string) $filters['badge_number'])) . '%');
         }
 
         if (! empty($filters['division'])) {
-            $query->where('division', 'like', '%' . trim((string) $filters['division']) . '%');
+            $query->where('division', 'like', '%' . $this->escapeLike(trim((string) $filters['division'])) . '%');
         }
 
         if (! empty($filters['unit'])) {
-            $query->where('unit', 'like', '%' . trim((string) $filters['unit']) . '%');
+            $query->where('unit', 'like', '%' . $this->escapeLike(trim((string) $filters['unit'])) . '%');
         }
 
         if (! empty($filters['role'])) {
@@ -188,6 +188,11 @@ class AppUserController extends Controller
         return redirect()
             ->route('users.index')
             ->with('success', "تم حذف {$deletedCount} مستخدم. تم الإبقاء على حسابك ومدير النظام الأساسي.");
+    }
+
+    private function escapeLike(string $value): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
     }
 
     private function excelImportErrorMessage(\Throwable $exception): string

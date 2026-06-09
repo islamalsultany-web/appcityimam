@@ -61,7 +61,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ $cspNonce }}">
     (function () {
         var roleSelect = document.getElementById('role');
         var scopesField = document.getElementById('responderScopesField');
