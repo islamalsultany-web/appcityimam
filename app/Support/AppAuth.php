@@ -40,39 +40,16 @@ class AppAuth
             return false;
         }
 
-        if ($user->hasRole('admin')) {
+        if ($user->hasRole('admin') || $user->role === 'admin') {
             return true;
         }
 
         foreach (explode('|', $permission) as $candidate) {
             $candidate = trim($candidate);
 
-            if ($candidate === '') {
-                continue;
-            }
-
-            if ($user->can($candidate) || self::legacyRoleAllowsPermission($user, $candidate)) {
+            if ($candidate !== '' && $user->can($candidate)) {
                 return true;
             }
-        }
-
-        return false;
-    }
-
-    private static function legacyRoleAllowsPermission(AppUser $user, string $permission): bool
-    {
-        if (str_starts_with($permission, 'inquiries.asker.')) {
-            return $user->role === 'asker' || $user->hasRole('asker');
-        }
-
-        if (str_starts_with($permission, 'inquiries.responder.')) {
-            return in_array($user->role, ['responder', 'admin'], true)
-                || $user->hasAnyRole(['responder', 'admin']);
-        }
-
-        if (str_starts_with($permission, 'inquiries.reviewer.')) {
-            return in_array($user->role, ['reviewer', 'admin'], true)
-                || $user->hasAnyRole(['reviewer', 'admin']);
         }
 
         return false;
