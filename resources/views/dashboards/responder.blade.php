@@ -261,11 +261,13 @@
                                 <a class="btn" href="{{ route('responder.inquiries.view', $inquiry) }}">عرض</a>
                                 <a class="btn" href="{{ route('responder.inquiries.print', $inquiry) }}" target="_blank">طباعة</a>
                                 <a class="btn primary" href="{{ route('responder.inquiries.show', $inquiry) }}">تعديل</a>
-                                <form method="POST" action="{{ route('responder.inquiries.destroy', $inquiry) }}" style="margin:0;" onsubmit="return confirm('تأكيد حذف الاستفسار؟');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="btn warn" type="submit">حذف</button>
-                                </form>
+                                @if (\App\Support\AppAuth::can(request(), 'inquiries.responder.delete'))
+                                    <form method="POST" action="{{ route('responder.inquiries.destroy', $inquiry) }}" style="margin:0;" onsubmit="return confirm('تأكيد حذف الاستفسار؟');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn warn" type="submit">حذف</button>
+                                    </form>
+                                @endif
                             </div>
                         </td>
                     </tr>

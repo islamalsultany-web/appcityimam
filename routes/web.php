@@ -120,7 +120,7 @@ Route::middleware('app.auth')->group(function (): void {
 			->name('responder.inquiries.answer');
 
 		Route::delete('/responder/dashboard/{inquiry}', [InquiryController::class, 'responderDestroy'])
-			->middleware('permission:inquiries.responder.delete|inquiries.responder.manage')
+			->middleware('permission:inquiries.responder.delete')
 			->name('responder.inquiries.destroy');
 
 		Route::get('/reviewer/dashboard', [InquiryController::class, 'reviewerIndex'])
