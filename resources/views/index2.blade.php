@@ -692,13 +692,13 @@ body {
 <header class="topbar">
     <div class="brand">
         <div class="logo-wrap" title="شعار مدينة الامام الحسين">
-            <img class="logo-image" src="brand-logo-clean.png" alt="شعار مدينة الامام الحسين" onerror="this.style.display='none';">
+            <img class="logo-image" src="brand-logo-clean.png" alt="شعار مدينة الامام الحسين" data-hide-on-error>
         </div>
         <div class="title-wrap" title="مدينة الامام الحسين (عليه السلام) للزائرين">
-            <img class="title-image" src="brand-title-clean.png" alt="مدينة الامام الحسين (عليه السلام) للزائرين" onerror="this.style.display='none';">
+            <img class="title-image" src="brand-title-clean.png" alt="مدينة الامام الحسين (عليه السلام) للزائرين" data-hide-on-error>
         </div>
         <div class="header-image-wrap">
-            <img src="{{ route('decorative.image') }}" alt="صورة تزيينية" class="header-image" onerror="this.style.display='none';">
+            <img src="{{ route('decorative.image') }}" alt="صورة تزيينية" class="header-image" data-hide-on-error>
         </div>
     </div>
  <div class="center-group">
@@ -1122,6 +1122,10 @@ setupCardOrdering();
 setupSidebarToggle();
 setInterval(updateClock, 1000);
 setInterval(updateWeather, 300000);
+
+document.querySelectorAll('img[data-hide-on-error]').forEach(function (img) {
+    img.addEventListener('error', function () { img.hidden = true; });
+});
 </script>
 </body>
 </html>

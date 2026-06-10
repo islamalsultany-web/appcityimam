@@ -8,17 +8,17 @@
 @endsection
 
 @section('content')
-    <p class="muted" style="margin-top: 0;">
+    <p class="muted no-mt">
         يمكنك من هذه الصفحة إنشاء نموذج اكسل مطابق لحقول المستخدم، أو استيراد ملف اكسل، أو تصدير بيانات المستخدمين الحالية.
     </p>
 
-    <div class="actions" style="margin-bottom: 16px;">
+    <div class="actions mb-16">
         <a class="btn primary" href="{{ route('users.excel.template') }}">إنشاء نموذج</a>
         <a class="btn" href="{{ route('users.excel.export') }}">تصدير</a>
     </div>
 
     @if ($errors->any())
-        <div class="alert" style="background:#fee2e2;border:1px solid #ef4444;color:#991b1b;padding:12px 14px;border-radius:10px;margin-bottom:14px;line-height:1.7;">
+        <div class="alert alert-danger-box mb-14">
             @foreach ($errors->all() as $error)
                 <div>{{ $error }}</div>
             @endforeach
@@ -26,7 +26,7 @@
     @endif
 
     @if (session('success'))
-        <div class="alert success" style="margin-bottom: 14px;">{{ session('success') }}</div>
+        <div class="alert success mb-14">{{ session('success') }}</div>
     @endif
 
     <form method="POST" action="{{ route('users.excel.import') }}" enctype="multipart/form-data" class="form-grid">
@@ -45,7 +45,7 @@
         </div>
     </form>
 
-    <div class="alert success" style="margin-top: 16px;">
+    <div class="alert success mt-16">
         ملاحظة: أثناء الاستيراد يتم قبول الخلايا الفارغة في الحقول الاختيارية، كما يتم التعامل مع القيم النصية أو الرقمية في الخلايا.
         عند إعادة الاستيراد يُحدَّث المستخدم المطابق <strong>بالرقم الوظيفي</strong> — ضع <strong>الاسم الكامل</strong> في عمود «اسم المستخدم» ليظهر في القائمة. إذا تركت كلمة المرور فارغة للمستخدم الموجود لن تتغير كلمة مروره.
         <br>ترتيب الأعمدة إلزامي: <strong>اسم المستخدم | كلمة المرور | تأكيد كلمة المرور | الرقم الوظيفي | رقم الباج | الشعبة | الوحدة | الدور</strong> — استخدم «إنشاء نموذج» ولا تغيّر ترتيب الأعمدة.

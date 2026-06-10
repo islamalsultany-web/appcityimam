@@ -6,7 +6,7 @@
 @section('topbar-actions')
     <a class="btn" href="{{ route('dashboard.asker') }}">عودة للفهرس</a>
     <a class="btn" href="{{ route('asker.inquiries.print', $inquiry) }}" target="_blank">طباعة</a>
-    <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+    <form method="POST" action="{{ route('logout') }}" class="no-margin">
         @csrf
         <button type="submit" class="btn warn">تسجيل الخروج</button>
     </form>
@@ -33,7 +33,7 @@
         'other' => 'أخرى',
     ])
 
-    <ul class="list-grid" style="margin-bottom: 14px;">
+    <ul class="list-grid mb-14">
         <li><strong>رقم الاستفسار:</strong> #{{ $inquiry->id }}</li>
         <li><strong>الحالة:</strong> <span class="role-chip {{ $inquiry->statusBadgeClass(true) }}">{{ $inquiry->displayStatusLabel() }}</span></li>
         <li><strong>الأولوية:</strong> {{ $priorityLabels[$inquiry->priority] ?? $inquiry->priority }}</li>
@@ -42,17 +42,17 @@
         <li><strong>تاريخ الإرسال:</strong> {{ $inquiry->created_at?->format('Y-m-d H:i') }}</li>
         <li><strong>تاريخ الرد:</strong> {{ $inquiry->responded_at?->format('Y-m-d H:i') ?? '-' }}</li>
         <li><strong>حالة التدقيق:</strong> <span class="role-chip {{ $inquiry->reviewStatusBadgeClass() }}">{{ $inquiry->reviewStatusLabel() }}</span></li>
-        <li class="full" style="grid-column: 1 / -1;"><strong>عنوان الاستفسار:</strong> {{ $inquiry->title }}</li>
-        <li class="full" style="grid-column: 1 / -1;"><strong>نص الاستفسار:</strong> {{ $inquiry->body }}</li>
+        <li class="full"><strong>عنوان الاستفسار:</strong> {{ $inquiry->title }}</li>
+        <li class="full"><strong>نص الاستفسار:</strong> {{ $inquiry->body }}</li>
         @if ($inquiry->attachment_path)
-            <li class="full" style="grid-column: 1 / -1;">
+            <li class="full">
                 <strong>مرفق الاستفسار:</strong>
                 <a href="{{ route('inquiries.attachments.download', ['inquiry' => $inquiry, 'field' => 'attachment']) }}">تنزيل المرفق</a>
             </li>
         @endif
-        <li class="full" style="grid-column: 1 / -1;"><strong>الإجابة:</strong> {{ $inquiry->publicResponseBody() ?: $inquiry->publicResponsePlaceholder() }}</li>
+        <li class="full"><strong>الإجابة:</strong> {{ $inquiry->publicResponseBody() ?: $inquiry->publicResponsePlaceholder() }}</li>
         @if ($inquiry->response_attachment_path && $inquiry->isResponseApproved())
-            <li class="full" style="grid-column: 1 / -1;">
+            <li class="full">
                 <strong>مرفق الإجابة:</strong>
                 <a href="{{ route('inquiries.attachments.download', ['inquiry' => $inquiry, 'field' => 'response']) }}">تنزيل مرفق الإجابة</a>
             </li>

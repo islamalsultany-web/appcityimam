@@ -4,7 +4,7 @@
 @section('page-title', 'إدارة المستخدمين')
 
 @section('header-actions')
-    <form action="{{ route('users.destroyAll') }}" method="POST" onsubmit="return confirm('تأكيد حذف جميع المستخدمين؟ هذا الإجراء لا يمكن التراجع عنه.');" style="margin:0;">
+    <form action="{{ route('users.destroyAll') }}" method="POST" class="no-margin" data-confirm="تأكيد حذف جميع المستخدمين؟ هذا الإجراء لا يمكن التراجع عنه.">
         @csrf
         @method('DELETE')
         <button class="btn warn" type="submit">حذف الكل</button>
@@ -14,7 +14,7 @@
 @endsection
 
 @section('content')
-    <form method="GET" action="{{ route('users.index') }}" class="form-grid" style="margin-bottom: 14px;">
+    <form method="GET" action="{{ route('users.index') }}" class="form-grid mb-14">
         <div class="field">
             <label for="username">اسم المستخدم</label>
             <input id="username" name="username" value="{{ request('username') }}" placeholder="ابحث باسم المستخدم">
@@ -59,7 +59,7 @@
         </div>
     </form>
 
-    <div class="muted" style="margin-bottom:10px;">عدد المستخدمين في هذه الصفحة: {{ $users->count() }}</div>
+    <div class="muted mb-10">عدد المستخدمين في هذه الصفحة: {{ $users->count() }}</div>
 
     <div class="table-wrap">
         <table>
@@ -87,7 +87,7 @@
                             <div class="actions">
                                 <a class="btn" href="{{ route('users.show', $user) }}">عرض</a>
                                 <a class="btn" href="{{ route('users.edit', $user) }}">تعديل</a>
-                                <form action="{{ route('users.destroy', $user) }}" method="POST" onsubmit="return confirm('تأكيد حذف المستخدم؟');" style="margin:0;">
+                                <form action="{{ route('users.destroy', $user) }}" method="POST" class="no-margin" data-confirm="تأكيد حذف المستخدم؟">
                                     @csrf
                                     @method('DELETE')
                                     <button class="btn warn" type="submit">حذف</button>

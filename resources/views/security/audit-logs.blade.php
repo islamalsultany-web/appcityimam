@@ -5,18 +5,18 @@
 
 @section('topbar-actions')
     <a class="btn" href="{{ route('home') }}">الرئيسية</a>
-    <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+    <form method="POST" action="{{ route('logout') }}" class="no-margin">
         @csrf
         <button type="submit" class="btn warn">تسجيل الخروج</button>
     </form>
 @endsection
 
 @section('content')
-    <p class="muted" style="margin-top: 0;">
+    <p class="muted no-mt">
         هذه الصفحة متاحة فقط للسوبر أدمن، وتعرض العمليات الحساسة داخل النظام.
     </p>
 
-    <form method="GET" action="{{ route('security.audit-logs') }}" class="form-grid" style="margin-bottom: 14px;">
+    <form method="GET" action="{{ route('security.audit-logs') }}" class="form-grid mb-14">
         <div class="field">
             <label for="actor">المستخدم المنفذ</label>
             <input id="actor" name="actor" value="{{ $filters['actor'] ?? '' }}">
@@ -94,7 +94,7 @@
                         @endif
                     </td>
                     <td>{{ $log->ip_address ?? '-' }}</td>
-                    <td style="white-space: normal; max-width: 420px;">{{ \App\Support\AuditLogger::displayDescription($log) }}</td>
+                    <td class="audit-cell">{{ \App\Support\AuditLogger::displayDescription($log) }}</td>
                 </tr>
             @empty
                 <tr>

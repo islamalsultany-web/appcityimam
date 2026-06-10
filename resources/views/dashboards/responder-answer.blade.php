@@ -6,7 +6,7 @@
 @section('topbar-actions')
     <a class="btn" href="{{ route('user.info') }}">معلومات المستخدم</a>
     <a class="btn" href="{{ route('dashboard.responder') }}">عودة للفهرس</a>
-    <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+    <form method="POST" action="{{ route('logout') }}" class="no-margin">
         @csrf
         <button type="submit" class="btn warn">تسجيل الخروج</button>
     </form>
@@ -27,20 +27,20 @@
     ])
     @php($reviewStatusLabels = \App\Models\Inquiry::REVIEW_STATUS_LABELS)
 
-    <p class="muted" style="margin-top: 0;">
+    <p class="muted no-mt">
         رقم الاستفسار: <strong>#{{ $inquiry->id }}</strong>
     </p>
 
-    <ul class="list-grid" style="margin-bottom: 14px;">
+    <ul class="list-grid mb-14">
         <li><strong>المستفسر:</strong> {{ $inquiry->asker?->username ?? '-' }}</li>
         <li><strong>الأولوية:</strong> {{ $priorityLabels[$inquiry->priority] ?? $inquiry->priority }}</li>
         <li><strong>نوع الاستفسار:</strong> {{ $typeLabels[$inquiry->inquiry_type] ?? $inquiry->inquiry_type }}</li>
         <li><strong>الحالة الحالية:</strong> <span class="role-chip {{ $inquiry->statusBadgeClass() }}">{{ $inquiry->statusLabel() }}</span></li>
         <li><strong>حالة التدقيق:</strong> <span class="role-chip {{ $inquiry->reviewStatusBadgeClass() }}">{{ $inquiry->reviewStatusLabel() }}</span></li>
-        <li class="full" style="grid-column: 1 / -1;"><strong>عنوان الاستفسار:</strong> {{ $inquiry->title }}</li>
-        <li class="full" style="grid-column: 1 / -1;"><strong>نص الاستفسار:</strong> {{ $inquiry->body }}</li>
+        <li class="full"><strong>عنوان الاستفسار:</strong> {{ $inquiry->title }}</li>
+        <li class="full"><strong>نص الاستفسار:</strong> {{ $inquiry->body }}</li>
         @if ($inquiry->review_note)
-            <li class="full" style="grid-column: 1 / -1;"><strong>ملاحظة المدقق:</strong> {{ $inquiry->review_note }}</li>
+            <li class="full"><strong>ملاحظة المدقق:</strong> {{ $inquiry->review_note }}</li>
         @endif
     </ul>
 

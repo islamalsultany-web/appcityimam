@@ -9,7 +9,7 @@
 @endsection
 
 @section('topbar-actions')
-    <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+    <form method="POST" action="{{ route('logout') }}" class="no-margin">
         @csrf
         <button type="submit" class="btn warn">تسجيل الخروج</button>
     </form>
@@ -23,7 +23,7 @@
         $scopeLabels = \App\Models\AppUser::RESPONDER_SCOPE_LABELS;
     @endphp
 
-    <form method="GET" action="{{ route('permissions.members.index') }}" class="form-grid" style="margin-bottom: 14px;">
+    <form method="GET" action="{{ route('permissions.members.index') }}" class="form-grid mb-14">
         <div class="field">
             <label for="username">اسم المستخدم</label>
             <input id="username" name="username" value="{{ $filters['username'] ?? '' }}" placeholder="ابحث باسم المستخدم">

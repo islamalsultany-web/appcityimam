@@ -8,7 +8,7 @@
 @endsection
 
 @section('topbar-actions')
-    <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+    <form method="POST" action="{{ route('logout') }}" class="no-margin">
         @csrf
         <button type="submit" class="btn warn">تسجيل الخروج</button>
     </form>
@@ -59,7 +59,7 @@
             <div class="actions">
                 @php($currentRoles = old('roles', []))
                 @foreach ($roles as $role)
-                    <label class="btn" style="cursor:pointer;">
+                    <label class="btn label-btn">
                         <input type="checkbox" name="roles[]" value="{{ $role->name }}" @checked(in_array($role->name, $currentRoles, true))>
                         {{ $roleLabels[$role->name] ?? $role->name }}
                     </label>
@@ -73,7 +73,7 @@
             @php($currentScopes = old('responder_scopes', ['all']))
             <div class="actions">
                 @foreach ($scopeLabels as $scopeValue => $scopeLabel)
-                    <label class="btn" style="cursor:pointer;">
+                    <label class="btn label-btn">
                         <input type="checkbox" name="responder_scopes[]" value="{{ $scopeValue }}" @checked(in_array($scopeValue, $currentScopes, true))>
                         {{ $scopeLabel }}
                     </label>
@@ -87,11 +87,11 @@
 
             @php($currentPermissions = old('permissions', []))
             @foreach ($modulePermissions as $moduleDisplayName => $modulePermissionItems)
-                <div style="margin-bottom: 12px; border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 12px; padding: 10px; background: rgba(255,255,255,0.5);">
-                    <div class="muted" style="font-weight: 700; margin-bottom: 8px; color: #1f2937;">{{ $moduleDisplayName }}</div>
+                <div class="module-box">
+                    <div class="muted module-title">{{ $moduleDisplayName }}</div>
                     <div class="actions">
                         @foreach ($modulePermissionItems as $permissionName => $displayName)
-                            <label class="btn" style="cursor:pointer;">
+                            <label class="btn label-btn">
                                 <input type="checkbox" name="permissions[]" value="{{ $permissionName }}" @checked(in_array($permissionName, $currentPermissions, true))>
                                 {{ $permissionLabels[$permissionName] ?? $displayName }}
                             </label>

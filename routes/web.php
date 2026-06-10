@@ -14,10 +14,14 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login.form');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/logout-home', [AuthController::class, 'logoutHome'])->name('logout.home');
-Route::get('/logout-home', fn () => redirect()->route('home'))->name('logout.home.legacy');
+Route::get('/logout-home', [PortalController::class, 'index'])->name('logout.home.legacy');
 
+Route::get('/', [PortalController::class, 'index'])->name('home');
 Route::get('/index2', [PortalController::class, 'index'])->name('index2');
-Route::redirect('/', '/index2')->name('home');
+
+Route::get('/up', fn () => response('OK', 200, [
+    'Content-Type' => 'text/plain; charset=UTF-8',
+]))->name('health');
 Route::get('/robots.txt', function () {
 	return response("User-agent: *\nDisallow:\n", 200, [
 		'Content-Type' => 'text/plain; charset=UTF-8',

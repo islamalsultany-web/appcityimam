@@ -5,7 +5,7 @@
 
 @section('topbar-actions')
     <a class="btn" href="{{ route('user.info') }}">معلومات المستخدم</a>
-    <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+    <form method="POST" action="{{ route('logout') }}" class="no-margin">
         @csrf
         <button type="submit" class="btn warn">تسجيل الخروج</button>
     </form>
@@ -59,7 +59,7 @@
 
     @php($searchParams = request()->only(['id', 'asker', 'title', 'type']))
 
-    <p class="muted" style="margin-top: 0;">
+    <p class="muted no-mt">
         تظهر هنا إجابات المجيبين ليقوم المدقق باعتمادها أو إعادتها أو تعديلها قبل إرسالها إلى المستفسر.
     </p>
 

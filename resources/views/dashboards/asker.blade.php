@@ -9,7 +9,7 @@
 
 @section('topbar-actions')
     <a class="btn" href="{{ route('user.info') }}">معلومات المستخدم</a>
-    <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+    <form method="POST" action="{{ route('logout') }}" class="no-margin">
         @csrf
         <button type="submit" class="btn warn">تسجيل الخروج</button>
     </form>
@@ -97,7 +97,7 @@
 
     @php($searchParams = request()->only(['id', 'title', 'priority', 'type', 'date_from', 'date_to']))
 
-    <p class="muted" style="margin-top: 0;">
+    <p class="muted no-mt">
         مرحبا {{ session('auth_app_username') }}، هنا تظهر كل استفساراتك وحالة الإجابة عليها.
     </p>
 

@@ -8,7 +8,7 @@
     <a class="btn" href="{{ route('dashboard.responder') }}">عودة للفهرس</a>
     <a class="btn" href="{{ route('responder.inquiries.print', $inquiry) }}" target="_blank">طباعة</a>
     <a class="btn primary" href="{{ route('responder.inquiries.show', $inquiry) }}">تعديل</a>
-    <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+    <form method="POST" action="{{ route('logout') }}" class="no-margin">
         @csrf
         <button type="submit" class="btn warn">تسجيل الخروج</button>
     </form>
@@ -36,7 +36,7 @@
     ])
     @php($reviewStatusLabels = \App\Models\Inquiry::REVIEW_STATUS_LABELS)
 
-    <ul class="list-grid" style="margin-bottom: 14px;">
+    <ul class="list-grid mb-14">
         <li><strong>رقم الاستفسار:</strong> #{{ $inquiry->id }}</li>
         <li><strong>المستفسر:</strong> {{ $inquiry->asker?->username ?? '-' }}</li>
         <li><strong>الحالة:</strong> <span class="role-chip {{ $inquiry->statusBadgeClass() }}">{{ $inquiry->statusLabel() }}</span></li>
@@ -44,13 +44,13 @@
         <li><strong>نوع الاستفسار:</strong> {{ $typeLabels[$inquiry->inquiry_type] ?? $inquiry->inquiry_type }}</li>
         <li><strong>حالة التدقيق:</strong> <span class="role-chip {{ $inquiry->reviewStatusBadgeClass() }}">{{ $inquiry->reviewStatusLabel() }}</span></li>
         <li><strong>تاريخ الإرسال:</strong> {{ $inquiry->created_at?->format('Y-m-d H:i') }}</li>
-        <li class="full" style="grid-column: 1 / -1;"><strong>عنوان الاستفسار:</strong> {{ $inquiry->title }}</li>
-        <li class="full" style="grid-column: 1 / -1;"><strong>نص الاستفسار:</strong> {{ $inquiry->body }}</li>
+        <li class="full"><strong>عنوان الاستفسار:</strong> {{ $inquiry->title }}</li>
+        <li class="full"><strong>نص الاستفسار:</strong> {{ $inquiry->body }}</li>
         @if ($inquiry->response_body)
-            <li class="full" style="grid-column: 1 / -1;"><strong>نص الإجابة:</strong> {{ $inquiry->response_body }}</li>
+            <li class="full"><strong>نص الإجابة:</strong> {{ $inquiry->response_body }}</li>
         @endif
         @if ($inquiry->review_note)
-            <li class="full" style="grid-column: 1 / -1;"><strong>ملاحظة المدقق:</strong> {{ $inquiry->review_note }}</li>
+            <li class="full"><strong>ملاحظة المدقق:</strong> {{ $inquiry->review_note }}</li>
         @endif
     </ul>
 @endsection

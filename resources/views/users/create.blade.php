@@ -8,7 +8,7 @@
 @endsection
 
 @section('content')
-    <form method="POST" action="{{ route('users.store') }}" style="display:grid; gap:12px;">
+    <form method="POST" action="{{ route('users.store') }}" class="form-stack">
         @csrf
         @include('users.partials.form', ['user' => null])
         <div class="actions">

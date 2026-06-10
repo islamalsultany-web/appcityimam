@@ -9,7 +9,7 @@
 @endsection
 
 @section('content')
-    <form method="POST" action="{{ route('users.update', $user) }}" style="display:grid; gap:12px;">
+    <form method="POST" action="{{ route('users.update', $user) }}" class="form-stack">
         @csrf
         @method('PUT')
         @include('users.partials.form', ['user' => $user])

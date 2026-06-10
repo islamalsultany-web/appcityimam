@@ -5,14 +5,14 @@
 
 @section('topbar-actions')
     <a class="btn" href="{{ route('dashboard.asker') }}">عودة للاستفسارات</a>
-    <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+    <form method="POST" action="{{ route('logout') }}" class="no-margin">
         @csrf
         <button type="submit" class="btn warn">تسجيل الخروج</button>
     </form>
 @endsection
 
 @section('content')
-    <p class="muted" style="margin-top: 0;">
+    <p class="muted no-mt">
         املأ الحقول التالية ثم أرسل الاستفسار ليظهر في لوحة المتابعة الخاصة بك.
     </p>
 

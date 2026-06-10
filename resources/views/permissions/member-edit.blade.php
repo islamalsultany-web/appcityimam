@@ -8,7 +8,7 @@
 @endsection
 
 @section('topbar-actions')
-    <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+    <form method="POST" action="{{ route('logout') }}" class="no-margin">
         @csrf
         <button type="submit" class="btn warn">تسجيل الخروج</button>
     </form>
@@ -28,7 +28,7 @@
         }
     @endphp
 
-    <p class="muted" style="margin-top: 0;">المستخدم: <strong>{{ $user->username }}</strong></p>
+    <p class="muted no-mt">المستخدم: <strong>{{ $user->username }}</strong></p>
 
     <form method="POST" action="{{ route('permissions.members.update', $user) }}" class="form-grid">
         @csrf
@@ -49,7 +49,7 @@
             <div class="actions">
                 @php($currentRoles = old('roles', $user->roles->pluck('name')->toArray()))
                 @foreach ($roles as $role)
-                    <label class="btn" style="cursor:pointer;">
+                    <label class="btn label-btn">
                         <input type="checkbox" name="roles[]" value="{{ $role->name }}" @checked(in_array($role->name, $currentRoles, true))>
                         {{ $roleLabels[$role->name] ?? $role->name }}
                     </label>
@@ -63,7 +63,7 @@
             @php($currentScopes = old('responder_scopes', $user->normalizedResponderScopes()))
             <div class="actions">
                 @foreach ($scopeLabels as $scopeValue => $scopeLabel)
-                    <label class="btn" style="cursor:pointer;">
+                    <label class="btn label-btn">
                         <input type="checkbox" name="responder_scopes[]" value="{{ $scopeValue }}" @checked(in_array($scopeValue, $currentScopes, true))>
                         {{ $scopeLabel }}
                     </label>
@@ -77,7 +77,7 @@
             <div class="actions">
                 @php($currentPermissions = old('permissions', $user->permissions->pluck('name')->toArray()))
                 @foreach ($permissions as $permission)
-                    <label class="btn" style="cursor:pointer;">
+                    <label class="btn label-btn">
                         <input type="checkbox" name="permissions[]" value="{{ $permission->name }}" @checked(in_array($permission->name, $currentPermissions, true))>
                         {{ $permissionLabels[$permission->name] ?? $permission->name }}
                     </label>

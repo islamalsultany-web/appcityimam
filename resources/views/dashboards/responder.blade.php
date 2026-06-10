@@ -11,7 +11,7 @@
 
 @section('topbar-actions')
     <a class="btn" href="{{ route('user.info') }}">معلومات المستخدم</a>
-    <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+    <form method="POST" action="{{ route('logout') }}" class="no-margin">
         @csrf
         <button type="submit" class="btn warn">تسجيل الخروج</button>
     </form>
@@ -119,7 +119,7 @@
 
     @php($searchParams = request()->only(['id', 'asker', 'title', 'priority', 'type', 'date_from', 'date_to']))
 
-    <p class="muted" style="margin-top: 0;">
+    <p class="muted no-mt">
         هذه الصفحة تعرض جميع الاستفسارات المرسلة من المستفسرين. اضغط "إجابة" لفتح صفحة الرد.
     </p>
 
@@ -213,7 +213,7 @@
     </div>
 
     <div id="columnsPanel" class="column-picker" aria-live="polite">
-        <strong style="display:block; margin-bottom:8px;">تحديد الأعمدة الظاهرة</strong>
+        <strong class="block-label">تحديد الأعمدة الظاهرة</strong>
         <label><input type="checkbox" data-col="col-id" checked> رقم</label>
         <label><input type="checkbox" data-col="col-asker" checked> المستفسر</label>
         <label><input type="checkbox" data-col="col-title" checked> عنوان الاستفسار</label>
@@ -261,7 +261,7 @@
                                 <a class="btn" href="{{ route('responder.inquiries.view', $inquiry) }}">عرض</a>
                                 <a class="btn" href="{{ route('responder.inquiries.print', $inquiry) }}" target="_blank">طباعة</a>
                                 <a class="btn primary" href="{{ route('responder.inquiries.show', $inquiry) }}">تعديل</a>
-                                <form method="POST" action="{{ route('responder.inquiries.destroy', $inquiry) }}" style="margin:0;" onsubmit="return confirm('تأكيد حذف الاستفسار؟');">
+                                <form method="POST" action="{{ route('responder.inquiries.destroy', $inquiry) }}" class="no-margin" data-confirm="تأكيد حذف الاستفسار؟">
                                     @csrf
                                     @method('DELETE')
                                     <button class="btn warn" type="submit">حذف</button>

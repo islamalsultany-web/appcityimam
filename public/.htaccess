@@ -4,8 +4,9 @@
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
     <FilesMatch "\.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|txt|xml)$">
-        Header always set Content-Security-Policy "default-src 'self'"
+        Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'self'; frame-src 'none'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; worker-src 'self'; manifest-src 'self'"
     </FilesMatch>
 </IfModule>
 

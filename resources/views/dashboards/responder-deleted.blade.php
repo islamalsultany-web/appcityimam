@@ -6,7 +6,7 @@
 @section('topbar-actions')
     <a class="btn" href="{{ route('user.info') }}">معلومات المستخدم</a>
     <a class="btn" href="{{ route('dashboard.responder') }}">عودة للفهرس</a>
-    <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+    <form method="POST" action="{{ route('logout') }}" class="no-margin">
         @csrf
         <button type="submit" class="btn warn">تسجيل الخروج</button>
     </form>
@@ -32,7 +32,7 @@
                         <td>{{ $inquiry->title }}</td>
                         <td>{{ $inquiry->deleted_at?->format('Y-m-d H:i') }}</td>
                         <td>
-                            <form method="POST" action="{{ route('responder.inquiries.restore', $inquiry->id) }}" style="margin:0;">
+                            <form method="POST" action="{{ route('responder.inquiries.restore', $inquiry->id) }}" class="no-margin">
                                 @csrf
                                 <button class="btn" type="submit">استعادة</button>
                             </form>

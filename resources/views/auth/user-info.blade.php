@@ -20,14 +20,14 @@
 @endsection
 
 @section('topbar-actions')
-    <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
+    <form method="POST" action="{{ route('logout') }}" class="no-margin">
         @csrf
         <button type="submit" class="btn warn">تسجيل الخروج</button>
     </form>
 @endsection
 
 @section('content')
-    <div class="list-grid" style="margin-bottom: 14px;">
+    <div class="list-grid mb-14">
         <div class="field">
             <label>اسم المستخدم</label>
             <input value="{{ $user->username }}" disabled>

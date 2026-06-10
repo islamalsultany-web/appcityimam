@@ -21,7 +21,7 @@
         @php($currentScopes = old('responder_scopes', $user?->normalizedResponderScopes() ?? (in_array($currentRole, ['responder', 'admin'], true) ? ['all'] : [])))
         <div class="actions">
             @foreach ($scopeLabels as $scopeValue => $scopeLabel)
-                <label class="btn" style="cursor:pointer;">
+                <label class="btn label-btn">
                     <input type="checkbox" name="responder_scopes[]" value="{{ $scopeValue }}" @checked(in_array($scopeValue, $currentScopes, true))>
                     {{ $scopeLabel }}
                 </label>

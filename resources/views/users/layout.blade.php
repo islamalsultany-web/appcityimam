@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'إدارة المستخدمين')</title>
     <link rel="stylesheet" href="{{ asset('css/cairo-font.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/utilities.css') }}">
     <style nonce="{{ $cspNonce }}">
 
         :root {
@@ -535,10 +536,10 @@
     <header class="topbar">
         <a class="brand" href="/">
             <div class="logo-wrap">
-                <img class="logo-image" src="/brand-logo-clean.png" alt="شعار" onerror="this.style.display='none'">
+                <img class="logo-image" src="/brand-logo-clean.png" alt="شعار" data-hide-on-error>
             </div>
             <div class="title-wrap">
-                <img class="title-image" src="/brand-title-clean.png" alt="مدينة الامام الحسين" onerror="this.style.display='none'">
+                <img class="title-image" src="/brand-title-clean.png" alt="مدينة الامام الحسين" data-hide-on-error>
             </div>
         </a>
         <div class="topbar-nav">
@@ -599,9 +600,9 @@
 
                     @if ($currentRole)
                         <div class="sidebar-section-title">الحساب</div>
-                        <form method="POST" action="{{ route('logout.home') }}" style="margin:0;">
+                        <form method="POST" action="{{ route('logout.home') }}" class="no-margin">
                             @csrf
-                            <button type="submit" class="sidebar-link" style="width:100%;text-align:start;background:none;border:0;cursor:pointer;font:inherit;color:inherit;padding:10px 12px;">تسجيل خروج</button>
+                            <button type="submit" class="sidebar-link sidebar-logout-btn">تسجيل خروج</button>
                         </form>
                     @endif
                 </nav>
@@ -622,7 +623,7 @@
 
                 @if ($errors->any())
                     <div class="alert error">
-                        <ul style="margin:0; padding-inline-start:18px;">
+                        <ul class="error-list">
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
@@ -634,5 +635,17 @@
             </div>
         </div>
     </div>
+    <script nonce="{{ $cspNonce }}">
+        document.querySelectorAll('img[data-hide-on-error]').forEach(function (img) {
+            img.addEventListener('error', function () { img.hidden = true; });
+        });
+        document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!confirm(form.getAttribute('data-confirm'))) {
+                    event.preventDefault();
+                }
+            });
+        });
+    </script>
 </body>
 </html>
