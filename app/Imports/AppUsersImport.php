@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\AppUser;
+use App\Support\EmployeeCredentialSecurity;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\OnEachRow;
@@ -13,6 +14,9 @@ class AppUsersImport implements OnEachRow
 {
     /** @var array<string,string> */
     private array $hashCache = [];
+
+    /** @var list<array{employee_number: ?string, username: string, temporary_password: string}> */
+    public array $temporaryPasswords = [];
 
     public function onRow(Row $row): void
     {
@@ -54,33 +58,30 @@ class AppUsersImport implements OnEachRow
         ];
 
         $user = $this->findExistingUser($employeeNumber, $username);
+        $resolvedUsername = $user
+            ? ($this->shouldRefreshUsernameFromImport($user, $username, $employeeNumber)
+                ? $this->resolveAvailableUsername($username, $employeeNumber, $user->id)
+                : $user->username)
+            : $this->resolveAvailableUsername($username, $employeeNumber);
 
-        if ($passwordFromFile !== null && $passwordFromFile !== '') {
-            if (! isset($this->hashCache[$passwordFromFile])) {
-                $this->hashCache[$passwordFromFile] = Hash::make((string) $passwordFromFile);
-            }
-
-            $payload['password'] = $this->hashCache[$passwordFromFile];
-        } elseif (! $user) {
-            $password = $employeeNumber ?? Str::password(12);
-
-            if (! isset($this->hashCache[$password])) {
-                $this->hashCache[$password] = Hash::make((string) $password);
-            }
-
-            $payload['password'] = $this->hashCache[$password];
-        }
+        $this->applyImportedPassword(
+            payload: $payload,
+            passwordFromFile: $passwordFromFile,
+            employeeNumber: $employeeNumber,
+            resolvedUsername: $resolvedUsername,
+            isNewUser: ! $user,
+        );
 
         if ($user) {
             if ($this->shouldRefreshUsernameFromImport($user, $username, $employeeNumber)) {
-                $user->username = $this->resolveAvailableUsername($username, $employeeNumber, $user->id);
+                $user->username = $resolvedUsername;
             }
 
             $user->fill($payload);
             $user->save();
         } else {
             $user = AppUser::query()->create(array_merge([
-                'username' => $this->resolveAvailableUsername($username, $employeeNumber),
+                'username' => $resolvedUsername,
             ], $payload));
         }
 
@@ -88,6 +89,72 @@ class AppUsersImport implements OnEachRow
             Role::findOrCreate($role, 'web');
             $user->syncRoles([$role]);
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function applyImportedPassword(
+        array &$payload,
+        ?string $passwordFromFile,
+        ?string $employeeNumber,
+        string $resolvedUsername,
+        bool $isNewUser,
+    ): void {
+        if ($passwordFromFile !== null && $passwordFromFile !== '') {
+            if (! EmployeeCredentialSecurity::isImportPasswordAcceptable($passwordFromFile, $employeeNumber)) {
+                $this->assignGeneratedPassword($payload, $employeeNumber, $resolvedUsername, $isNewUser);
+
+                return;
+            }
+
+            $payload['password'] = $this->hashPassword($passwordFromFile);
+            $payload['must_change_credentials'] = EmployeeCredentialSecurity::importRequiresCredentialChange(
+                $resolvedUsername,
+                $passwordFromFile,
+                $employeeNumber
+            );
+
+            return;
+        }
+
+        if (! $isNewUser) {
+            return;
+        }
+
+        $this->assignGeneratedPassword($payload, $employeeNumber, $resolvedUsername, true);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function assignGeneratedPassword(
+        array &$payload,
+        ?string $employeeNumber,
+        string $resolvedUsername,
+        bool $recordTemporaryPassword,
+    ): void {
+        $plainPassword = Str::password(16);
+
+        $payload['password'] = $this->hashPassword($plainPassword);
+        $payload['must_change_credentials'] = true;
+
+        if ($recordTemporaryPassword) {
+            $this->temporaryPasswords[] = [
+                'employee_number' => $employeeNumber,
+                'username' => $resolvedUsername,
+                'temporary_password' => $plainPassword,
+            ];
+        }
+    }
+
+    private function hashPassword(string $plainPassword): string
+    {
+        if (! isset($this->hashCache[$plainPassword])) {
+            $this->hashCache[$plainPassword] = Hash::make($plainPassword);
+        }
+
+        return $this->hashCache[$plainPassword];
     }
 
     private function findExistingUser(?string $employeeNumber, string $username): ?AppUser

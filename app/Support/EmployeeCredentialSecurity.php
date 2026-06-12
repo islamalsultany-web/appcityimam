@@ -12,6 +12,10 @@ class EmployeeCredentialSecurity
 
     public static function mustChangeCredentials(AppUser $user): bool
     {
+        if ($user->must_change_credentials) {
+            return true;
+        }
+
         if (self::isAdmin($user)) {
             return false;
         }
@@ -21,6 +25,35 @@ class EmployeeCredentialSecurity
         }
 
         return self::usesInsecureEmployeeCredentials($user);
+    }
+
+    public static function isImportPasswordAcceptable(string $password, ?string $employeeNumber): bool
+    {
+        $password = trim($password);
+        $employeeNumber = trim((string) $employeeNumber);
+
+        if ($password === '' || strlen($password) < 8) {
+            return false;
+        }
+
+        if (! preg_match('/\p{L}/u', $password) || ! preg_match('/\d/', $password)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static function importRequiresCredentialChange(string $username, string $plainPassword, ?string $employeeNumber): bool
+    {
+        $employeeNumber = trim((string) $employeeNumber);
+        $username = trim($username);
+        $plainPassword = trim($plainPassword);
+
+        if ($employeeNumber === '') {
+            return false;
+        }
+
+        return $username === $employeeNumber || $plainPassword === $employeeNumber;
     }
 
     public static function usesInsecureEmployeeCredentials(AppUser $user): bool

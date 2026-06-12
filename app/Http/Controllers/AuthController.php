@@ -134,6 +134,7 @@ class AuthController extends Controller
 
         $user->username = trim($data['username']);
         $user->password = Hash::make($data['password']);
+        $user->must_change_credentials = false;
         $user->save();
 
         Auth::login($user);

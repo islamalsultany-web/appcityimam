@@ -8,10 +8,13 @@
         <label for="role">الدور</label>
         <select id="role" name="role" required>
             @php($currentRole = old('role', $user?->role ?? 'asker'))
+            @php($authUser = \App\Support\AppAuth::user(request()))
             <option value="asker" @selected($currentRole === 'asker')>مستفسر</option>
             <option value="responder" @selected($currentRole === 'responder')>مجيب</option>
             <option value="reviewer" @selected($currentRole === 'reviewer')>مدقق</option>
-            <option value="admin" @selected($currentRole === 'admin')>مسؤول</option>
+            @if (\App\Support\AdminRoleGuard::isAdmin($authUser))
+                <option value="admin" @selected($currentRole === 'admin')>مسؤول</option>
+            @endif
         </select>
     </div>
 

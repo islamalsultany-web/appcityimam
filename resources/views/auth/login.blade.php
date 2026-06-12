@@ -115,6 +115,40 @@
             margin: 0;
             color: var(--soft);
             font-size: 0.9rem;
+            line-height: 1.55;
+        }
+
+        .password-wrap {
+            position: relative;
+        }
+
+        .password-wrap input {
+            padding-inline-end: 4.75rem;
+        }
+
+        .password-toggle {
+            position: absolute;
+            inset-inline-end: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 0;
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            background: rgba(22, 146, 255, 0.1);
+        }
+
+        .password-toggle:hover {
+            background: rgba(22, 146, 255, 0.18);
+        }
+
+        .password-toggle:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
         }
     </style>
 </head>
@@ -131,7 +165,7 @@
                 <div class="error">{{ $errors->first() }}</div>
             @endif
 
-            <p class="hint">يمكنك الدخول بالرقم الوظيفي أو اسم المستخدم. كلمة المرور الافتراضية للمنتسبين المستوردين: نفس الرقم الوظيفي.</p>
+            <p class="hint">يمكنك الدخول بالرقم الوظيفي أو اسم المستخدم. أدخل كلمة المرور الخاصة بك — إذا نسيتها، تواصل مع مسؤول النظام.</p>
 
             <div class="field">
                 <label for="username">اسم المستخدم أو الرقم الوظيفي</label>
@@ -139,12 +173,34 @@
             </div>
 
             <div class="field">
-                <label for="password">كلمة السر</label>
-                <input id="password" name="password" type="password" required>
+                <label for="password">كلمة المرور</label>
+                <div class="password-wrap">
+                    <input id="password" name="password" type="password" required autocomplete="current-password">
+                    <button type="button" class="password-toggle" id="togglePassword" aria-label="إظهار كلمة المرور" aria-pressed="false">إظهار</button>
+                </div>
             </div>
 
             <button type="submit">دخول</button>
         </form>
     </div>
+
+    <script nonce="{{ $cspNonce }}">
+        (function () {
+            var input = document.getElementById('password');
+            var toggle = document.getElementById('togglePassword');
+
+            if (!input || !toggle) {
+                return;
+            }
+
+            toggle.addEventListener('click', function () {
+                var visible = input.type === 'text';
+                input.type = visible ? 'password' : 'text';
+                toggle.textContent = visible ? 'إظهار' : 'إخفاء';
+                toggle.setAttribute('aria-label', visible ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور');
+                toggle.setAttribute('aria-pressed', visible ? 'false' : 'true');
+            });
+        })();
+    </script>
 </body>
 </html>

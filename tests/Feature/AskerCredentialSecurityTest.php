@@ -22,6 +22,7 @@ class AskerCredentialSecurityTest extends TestCase
             'username' => '11914',
             'employee_number' => '11914',
             'password' => Hash::make('11914'),
+            'must_change_credentials' => true,
         ]);
         $asker->assignRole('asker');
 
@@ -43,6 +44,7 @@ class AskerCredentialSecurityTest extends TestCase
             'username' => '11914',
             'employee_number' => '11914',
             'password' => Hash::make('11914'),
+            'must_change_credentials' => true,
         ]);
         $asker->assignRole('asker');
         Permission::findOrCreate('users.index', 'web');
@@ -66,6 +68,7 @@ class AskerCredentialSecurityTest extends TestCase
             'username' => '11914',
             'employee_number' => '11914',
             'password' => Hash::make('11914'),
+            'must_change_credentials' => true,
         ]);
         $asker->assignRole('asker');
 
@@ -80,6 +83,7 @@ class AskerCredentialSecurityTest extends TestCase
 
     public function test_asker_can_access_dashboard_after_secure_credentials_update(): void
     {
+        $this->seed(\Database\Seeders\PermissionSystemSeeder::class);
         Role::findOrCreate('asker', 'web');
 
         $asker = AppUser::factory()->create([
@@ -87,6 +91,7 @@ class AskerCredentialSecurityTest extends TestCase
             'username' => '11914',
             'employee_number' => '11914',
             'password' => Hash::make('11914'),
+            'must_change_credentials' => true,
         ]);
         $asker->assignRole('asker');
 
@@ -102,9 +107,15 @@ class AskerCredentialSecurityTest extends TestCase
 
         $update->assertRedirect(route('dashboard.asker'));
 
-        $dashboard = $this->withSession([
+        $asker->refresh();
+        $this->assertFalse($asker->must_change_credentials);
+
+        $asker->refresh();
+        $asker->assignRole('asker');
+
+        $dashboard = $this->actingAs($asker)->withSession([
             'auth_app_user_id' => $asker->id,
-            'auth_app_username' => 'employee11914',
+            'auth_app_username' => $asker->username,
             'auth_app_role' => $asker->role,
         ])->get(route('dashboard.asker'));
 

@@ -41,6 +41,7 @@ class AppUser extends Authenticatable
     protected $fillable = [
         'username',
         'password',
+        'must_change_credentials',
         'two_factor_secret',
         'two_factor_confirmed_at',
         'employee_number',
@@ -52,6 +53,7 @@ class AppUser extends Authenticatable
     ];
 
     protected $casts = [
+        'must_change_credentials' => 'boolean',
         'responder_scopes' => 'array',
         'two_factor_secret' => 'encrypted',
         'two_factor_confirmed_at' => 'datetime',

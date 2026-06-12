@@ -24,7 +24,7 @@ class AppUsersTemplateExport implements FromArray, WithHeadings
     public function array(): array
     {
         return [
-            ['مهدي غازي حسن هجيرز', '', '', '11914', '', '', '', 'asker'],
+            ['مهدي غازي حسن هجيرز', 'SecurePass1', 'SecurePass1', '11914', '', '', '', 'asker'],
         ];
     }
 }

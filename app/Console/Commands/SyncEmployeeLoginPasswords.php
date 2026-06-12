@@ -45,6 +45,7 @@ class SyncEmployeeLoginPasswords extends Command
                 }
 
                 $user->password = Hash::make($employeeNumber);
+                $user->must_change_credentials = true;
                 $user->save();
                 $updated++;
             });

@@ -80,9 +80,15 @@ class AppUserController extends Controller
         set_time_limit(300);
 
         try {
-            DB::transaction(function () use ($request): void {
-                Excel::import(new AppUsersImport(), $request->file('excel_file'));
+            $import = new AppUsersImport();
+
+            DB::transaction(function () use ($request, $import): void {
+                Excel::import($import, $request->file('excel_file'));
             });
+
+            if ($import->temporaryPasswords !== []) {
+                $request->session()->flash('import_temporary_passwords', $import->temporaryPasswords);
+            }
         } catch (\Throwable $exception) {
             report($exception);
 
@@ -95,7 +101,13 @@ class AppUserController extends Controller
 
         AuditLogger::security($request, 'users.excel.import');
 
-        return redirect()->route('users.excel')->with('success', 'تم استيراد بيانات المستخدمين بنجاح.');
+        $successMessage = 'تم استيراد بيانات المستخدمين بنجاح.';
+
+        if ($import->temporaryPasswords !== []) {
+            $successMessage .= ' تم إنشاء كلمات مرور مؤقتة للمستخدمين الجدد بدون كلمة مرور في الملف — سلّمها للمنتسبين مرة واحدة ثم سيتم إجبارهم على تغييرها عند أول دخول.';
+        }
+
+        return redirect()->route('users.excel')->with('success', $successMessage);
     }
 
     public function store(StoreAppUserRequest $request): RedirectResponse

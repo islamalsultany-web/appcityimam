@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\IndexMemberPermissionsRequest;
 use App\Models\AppUser;
+use App\Support\AdminRoleGuard;
 use App\Support\AppAuth;
 use App\Support\AuditLogger;
 use Illuminate\Http\RedirectResponse;
@@ -77,12 +78,15 @@ class MemberPermissionController extends Controller
         $user = AppUser::query()->findOrFail((int) $data['user_id']);
         $roles = $data['roles'] ?? [];
         $permissions = $data['permissions'] ?? [];
+        $legacyRole = $data['legacy_role'] ?? null;
+
+        AdminRoleGuard::assertCanGrantAdmin(AppAuth::user($request), $legacyRole, $roles, $user);
 
         $user->syncRoles($roles);
         $user->syncPermissions($permissions);
 
-        if (! empty($data['legacy_role'])) {
-            $user->role = $data['legacy_role'];
+        if ($legacyRole !== null && $legacyRole !== '') {
+            $user->role = $legacyRole;
         }
 
         $user->responder_scopes = AppUser::sanitizeResponderScopes(
@@ -115,12 +119,15 @@ class MemberPermissionController extends Controller
 
         $roles = $data['roles'] ?? [];
         $permissions = $data['permissions'] ?? [];
+        $legacyRole = $data['legacy_role'] ?? null;
+
+        AdminRoleGuard::assertCanGrantAdmin(AppAuth::user($request), $legacyRole, $roles, $user);
 
         $user->syncRoles($roles);
         $user->syncPermissions($permissions);
 
-        if (! empty($data['legacy_role'])) {
-            $user->role = $data['legacy_role'];
+        if ($legacyRole !== null && $legacyRole !== '') {
+            $user->role = $legacyRole;
         }
 
         $user->responder_scopes = AppUser::sanitizeResponderScopes(

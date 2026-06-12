@@ -26,6 +26,10 @@
                 $permissionLabels[$permissionName] = $displayName;
             }
         }
+
+        $authUser = \App\Support\AppAuth::user(request());
+        $canGrantAdmin = \App\Support\AdminRoleGuard::isAdmin($authUser);
+        $targetIsAdmin = \App\Support\AdminRoleGuard::isAdmin($user);
     @endphp
 
     <p class="muted no-mt">المستخدم: <strong>{{ $user->username }}</strong></p>
@@ -37,7 +41,9 @@
         <div class="field">
             <label for="legacy_role">الدور التشغيلي (legacy)</label>
             <select id="legacy_role" name="legacy_role">
-                <option value="admin" @selected(old('legacy_role', $user->role) === 'admin')>{{ $roleLabels['admin'] ?? 'admin' }}</option>
+                @if ($canGrantAdmin || $targetIsAdmin)
+                    <option value="admin" @selected(old('legacy_role', $user->role) === 'admin')>{{ $roleLabels['admin'] ?? 'admin' }}</option>
+                @endif
                 <option value="asker" @selected(old('legacy_role', $user->role) === 'asker')>{{ $roleLabels['asker'] ?? 'asker' }}</option>
                 <option value="responder" @selected(old('legacy_role', $user->role) === 'responder')>{{ $roleLabels['responder'] ?? 'responder' }}</option>
                 <option value="reviewer" @selected(old('legacy_role', $user->role) === 'reviewer')>{{ $roleLabels['reviewer'] ?? 'reviewer' }}</option>
@@ -48,11 +54,16 @@
             <label>الأدوار</label>
             <div class="actions">
                 @php($currentRoles = old('roles', $user->roles->pluck('name')->toArray()))
+                @if ($targetIsAdmin && ! $canGrantAdmin)
+                    <input type="hidden" name="roles[]" value="admin">
+                @endif
                 @foreach ($roles as $role)
+                    @if ($role->name !== 'admin' || $canGrantAdmin || $targetIsAdmin)
                     <label class="btn label-btn">
-                        <input type="checkbox" name="roles[]" value="{{ $role->name }}" @checked(in_array($role->name, $currentRoles, true))>
+                        <input type="checkbox" name="roles[]" value="{{ $role->name }}" @checked(in_array($role->name, $currentRoles, true)) @disabled($role->name === 'admin' && $targetIsAdmin && ! $canGrantAdmin)>
                         {{ $roleLabels[$role->name] ?? $role->name }}
                     </label>
+                    @endif
                 @endforeach
             </div>
         </div>

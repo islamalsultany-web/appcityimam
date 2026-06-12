@@ -4,6 +4,8 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\AuthorizesAppPermissions;
 use App\Models\AppUser;
+use App\Support\AdminRoleGuard;
+use App\Support\AppAuth;
 use App\Support\EmployeeCredentialRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -29,7 +31,7 @@ class StoreAppUserRequest extends FormRequest
             'badge_number' => ['nullable', 'string', 'max:40'],
             'division' => ['nullable', 'string', 'max:80'],
             'unit' => ['nullable', 'string', 'max:80'],
-            'role' => ['required', Rule::in(AppUser::ROLE_OPTIONS)],
+            'role' => ['required', Rule::in(AdminRoleGuard::assignableRoleNames(AppAuth::user($this)))],
             'responder_scopes' => ['nullable', 'array'],
             'responder_scopes.*' => ['string', Rule::in(AppUser::RESPONDER_SCOPE_OPTIONS)],
         ];

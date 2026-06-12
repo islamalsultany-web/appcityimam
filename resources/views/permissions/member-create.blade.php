@@ -26,6 +26,9 @@
                 $permissionLabels[$permissionName] = $displayName;
             }
         }
+
+        $authUser = \App\Support\AppAuth::user(request());
+        $canGrantAdmin = \App\Support\AdminRoleGuard::isAdmin($authUser);
     @endphp
 
     <form method="POST" action="{{ route('permissions.members.store') }}" class="form-grid">
@@ -47,7 +50,9 @@
             <label for="legacy_role">الدور التشغيلي (legacy)</label>
             <select id="legacy_role" name="legacy_role">
                 <option value="">-- بدون تغيير --</option>
-                <option value="admin" @selected(old('legacy_role') === 'admin')>{{ $roleLabels['admin'] ?? 'admin' }}</option>
+                @if ($canGrantAdmin)
+                    <option value="admin" @selected(old('legacy_role') === 'admin')>{{ $roleLabels['admin'] ?? 'admin' }}</option>
+                @endif
                 <option value="asker" @selected(old('legacy_role') === 'asker')>{{ $roleLabels['asker'] ?? 'asker' }}</option>
                 <option value="responder" @selected(old('legacy_role') === 'responder')>{{ $roleLabels['responder'] ?? 'responder' }}</option>
                 <option value="reviewer" @selected(old('legacy_role') === 'reviewer')>{{ $roleLabels['reviewer'] ?? 'reviewer' }}</option>
@@ -59,10 +64,12 @@
             <div class="actions">
                 @php($currentRoles = old('roles', []))
                 @foreach ($roles as $role)
+                    @if ($role->name !== 'admin' || $canGrantAdmin)
                     <label class="btn label-btn">
                         <input type="checkbox" name="roles[]" value="{{ $role->name }}" @checked(in_array($role->name, $currentRoles, true))>
                         {{ $roleLabels[$role->name] ?? $role->name }}
                     </label>
+                    @endif
                 @endforeach
             </div>
         </div>

@@ -42,8 +42,8 @@ class AppUsersImportTest extends TestCase
     {
         Excel::import(new AppUsersImport(), $this->makeImportPath([
             ['اسم المستخدم', 'كلمة المرور', 'تأكيد كلمة المرور', 'الرقم الوظيفي', 'رقم الباج', 'الشعبة', 'الوحدة', 'الدور'],
-            ['مهدي غازي حسن هجيرز', '11914', '11914', '11914', '', 'شعبة', 'وحدة', 'asker'],
-            ['كرار خليل عبد الامير', '37364', '37364', '37364', '', '', '', 'asker'],
+            ['مهدي غازي حسن هجيرز', 'Pass11914', 'Pass11914', '11914', '', 'شعبة', 'وحدة', 'asker'],
+            ['كرار خليل عبد الامير', 'Pass37364', 'Pass37364', '37364', '', '', '', 'asker'],
         ]));
 
         $this->assertDatabaseCount('app_users', 2);
@@ -55,8 +55,80 @@ class AppUsersImportTest extends TestCase
         $this->assertNotNull($second);
         $this->assertTrue($first->hasRole('asker'));
         $this->assertTrue($second->hasRole('asker'));
-        $this->assertTrue(Hash::check('11914', (string) $first->password));
-        $this->assertTrue(Hash::check('37364', (string) $second->password));
+        $this->assertTrue(Hash::check('Pass11914', (string) $first->password));
+        $this->assertTrue(Hash::check('Pass37364', (string) $second->password));
+        $this->assertFalse($first->must_change_credentials);
+        $this->assertFalse($second->must_change_credentials);
+    }
+
+    public function test_import_with_employee_number_password_flags_must_change(): void
+    {
+        Role::findOrCreate('asker', 'web');
+
+        Excel::import(new AppUsersImport(), $this->makeImportPath([
+            ['اسم المستخدم', 'كلمة المرور', 'تأكيد كلمة المرور', 'الرقم الوظيفي', 'رقم الباج', 'الشعبة', 'الوحدة', 'الدور'],
+            ['22953001', 'P2295301', 'P2295301', '22953001', '', '', '', 'asker'],
+        ]));
+
+        $user = AppUser::query()->where('employee_number', '22953001')->first();
+
+        $this->assertNotNull($user);
+        $this->assertTrue(Hash::check('P2295301', (string) $user->password));
+        $this->assertTrue($user->must_change_credentials);
+    }
+
+    public function test_fresh_import_without_password_uses_random_password_and_flags_must_change(): void
+    {
+        Role::findOrCreate('asker', 'web');
+
+        $import = new AppUsersImport();
+        Excel::import($import, $this->makeImportPath([
+            ['اسم المستخدم', 'كلمة المرور', 'تأكيد كلمة المرور', 'الرقم الوظيفي', 'رقم الباج', 'الشعبة', 'الوحدة', 'الدور'],
+            ['منتسب جديد', '', '', '50001', '', 'شعبة', 'وحدة', 'asker'],
+        ]));
+
+        $user = AppUser::query()->where('employee_number', '50001')->first();
+
+        $this->assertNotNull($user);
+        $this->assertFalse(Hash::check('50001', (string) $user->password));
+        $this->assertTrue($user->must_change_credentials);
+        $this->assertCount(1, $import->temporaryPasswords);
+        $this->assertSame('50001', $import->temporaryPasswords[0]['employee_number']);
+        $this->assertTrue(Hash::check($import->temporaryPasswords[0]['temporary_password'], (string) $user->password));
+    }
+
+    public function test_fresh_import_with_strong_password_does_not_flag_must_change(): void
+    {
+        Role::findOrCreate('asker', 'web');
+
+        Excel::import(new AppUsersImport(), $this->makeImportPath([
+            ['اسم المستخدم', 'كلمة المرور', 'تأكيد كلمة المرور', 'الرقم الوظيفي', 'رقم الباج', 'الشعبة', 'الوحدة', 'الدور'],
+            ['منتسب آمن', 'SecurePass1', 'SecurePass1', '50002', '', '', '', 'asker'],
+        ]));
+
+        $user = AppUser::query()->where('employee_number', '50002')->first();
+
+        $this->assertNotNull($user);
+        $this->assertTrue(Hash::check('SecurePass1', (string) $user->password));
+        $this->assertFalse($user->must_change_credentials);
+    }
+
+    public function test_weak_import_password_is_replaced_with_random_password(): void
+    {
+        Role::findOrCreate('asker', 'web');
+
+        $import = new AppUsersImport();
+        Excel::import($import, $this->makeImportPath([
+            ['اسم المستخدم', 'كلمة المرور', 'تأكيد كلمة المرور', 'الرقم الوظيفي', 'رقم الباج', 'الشعبة', 'الوحدة', 'الدور'],
+            ['منتسب ضعيف', '123', '123', '50003', '', '', '', 'asker'],
+        ]));
+
+        $user = AppUser::query()->where('employee_number', '50003')->first();
+
+        $this->assertNotNull($user);
+        $this->assertFalse(Hash::check('123', (string) $user->password));
+        $this->assertTrue($user->must_change_credentials);
+        $this->assertCount(1, $import->temporaryPasswords);
     }
 
     public function test_import_rejects_admin_role_from_spreadsheet(): void

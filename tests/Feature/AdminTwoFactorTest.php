@@ -101,4 +101,41 @@ class AdminTwoFactorTest extends TestCase
 
         $users->assertOk();
     }
+
+    public function test_two_factor_verify_is_rate_limited_after_five_failed_attempts(): void
+    {
+        $this->seed(PermissionSystemSeeder::class);
+        Role::findOrCreate('admin', 'web');
+
+        $secret = Totp::generateSecret();
+
+        $admin = AppUser::factory()->create([
+            'role' => 'admin',
+            'username' => 'admin4',
+            'password' => Hash::make('AdminPass1'),
+            'two_factor_secret' => $secret,
+            'two_factor_confirmed_at' => now(),
+        ]);
+        $admin->assignRole('admin');
+
+        $session = [
+            'auth_app_user_id' => $admin->id,
+            'auth_app_username' => $admin->username,
+            'auth_app_role' => $admin->role,
+        ];
+
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->withSession($session)
+                ->post(route('user.two-factor.verify.submit'), ['code' => '000000'])
+                ->assertSessionHasErrors('code');
+        }
+
+        $this->withSession($session)
+            ->post(route('user.two-factor.verify.submit'), ['code' => '000000'])
+            ->assertSessionHasErrors('code');
+
+        $errors = session('errors');
+        $this->assertNotNull($errors);
+        $this->assertStringContainsString('محاولات تحقق كثيرة', (string) $errors->first('code'));
+    }
 }
