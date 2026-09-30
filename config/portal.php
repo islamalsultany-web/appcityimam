@@ -8,11 +8,11 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'hr_url' => env('PORTAL_HR_URL', 'https://hr.cityimam.com/'),
+    'hr_url' => env('PORTAL_HR_URL', 'http://172.12.26.144:8090'),
 
-    'finance_url' => env('PORTAL_FINANCE_URL', 'https://mony.cityimam.com/'),
+    'finance_url' => env('PORTAL_FINANCE_URL', 'http://172.12.26.144:8890'),
 
-    'assets_url' => env('PORTAL_ASSETS_URL', 'https://assetcity.cityimam.com/'),
+    'assets_url' => env('PORTAL_ASSETS_URL', 'http://172.12.26.144:8020'),
 
     /*
     |--------------------------------------------------------------------------
