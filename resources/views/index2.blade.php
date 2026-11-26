@@ -797,6 +797,10 @@ body {
                 </svg>
             </div>
         </a>
+        <a class="app-card" data-id="official-reports" data-title="برنامج التقارير الرسمية" href="{{ route('official-reports.index') }}" draggable="true">
+            <h3>برنامج التقارير الرسمية</h3>
+            <div class="icon cyan" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M8 16v-4M12 16V8M16 16v-6"></path></svg></div>
+        </a>
         <div id="noResults" class="no-results">لا توجد نتائج مطابقة للبحث</div>
     </main>
 </section>

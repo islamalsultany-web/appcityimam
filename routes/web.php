@@ -64,6 +64,9 @@ Route::middleware('app.auth')->group(function (): void {
 
 	Route::middleware('admin.two.factor')->group(function (): void {
 	Route::middleware('secure.credentials')->group(function (): void {
+        Route::post('/official-reports/assist', [\App\Http\Controllers\OfficialReportController::class, 'assist'])->middleware('throttle:10,1')->name('official-reports.assist');
+        Route::resource('official-reports', \App\Http\Controllers\OfficialReportController::class)->except('show');
+
 		Route::get('/security/audit-logs', [AuditLogController::class, 'index'])
 			->middleware('super.admin')
 			->name('security.audit-logs');
