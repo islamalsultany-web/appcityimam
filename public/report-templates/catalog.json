@@ -1,0 +1,243 @@
+{
+  "updated_at": "2026-11-26",
+  "templates": [
+    {
+      "id": "1",
+      "name": "تقرير يومي",
+      "description": "الأعمال اليومية والمتابعة",
+      "template": {
+        "version": 1,
+        "theme": "heritage",
+        "accent": "#176354",
+        "font": "cairo",
+        "chart": "bar",
+        "sections": [
+          {
+            "title": "موجز اليوم",
+            "enabled": true,
+            "columns": []
+          },
+          {
+            "title": "الأعمال المنجزة",
+            "enabled": true,
+            "columns": [
+              "العمل",
+              "العدد",
+              "الملاحظات"
+            ]
+          },
+          {
+            "title": "أعمال قيد المتابعة",
+            "enabled": true,
+            "columns": []
+          },
+          {
+            "title": "المعوقات",
+            "enabled": true,
+            "columns": []
+          },
+          {
+            "title": "المطلوب من الإدارة",
+            "enabled": true,
+            "columns": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "2",
+      "name": "تقرير أسبوعي",
+      "description": "الإنجاز والخطة الأسبوعية",
+      "template": {
+        "version": 1,
+        "theme": "modern",
+        "accent": "#245b91",
+        "font": "cairo",
+        "chart": "bar",
+        "sections": [
+          {
+            "title": "ملخص الأسبوع",
+            "enabled": true,
+            "columns": []
+          },
+          {
+            "title": "الإنجازات",
+            "enabled": true,
+            "columns": [
+              "المهمة",
+              "المسؤول",
+              "الموعد",
+              "الحالة"
+            ]
+          },
+          {
+            "title": "متابعة الأعمال",
+            "enabled": true,
+            "columns": []
+          },
+          {
+            "title": "خطة الأسبوع المقبل",
+            "enabled": true,
+            "columns": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "3",
+      "name": "تقرير شهري",
+      "description": "الأداء والنتائج الشهرية",
+      "template": {
+        "version": 1,
+        "theme": "heritage",
+        "accent": "#78552b",
+        "font": "cairo",
+        "chart": "bar",
+        "sections": [
+          {
+            "title": "ملخص الأداء",
+            "enabled": true,
+            "columns": []
+          },
+          {
+            "title": "نتائج الشهر",
+            "enabled": true,
+            "columns": [
+              "المؤشر",
+              "المستهدف",
+              "المتحقق",
+              "الملاحظات"
+            ]
+          },
+          {
+            "title": "التحديات",
+            "enabled": true,
+            "columns": []
+          },
+          {
+            "title": "خطة الشهر المقبل",
+            "enabled": true,
+            "columns": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "4",
+      "name": "تقرير صيانة",
+      "description": "الأعطال والإجراءات الفنية",
+      "template": {
+        "version": 1,
+        "theme": "modern",
+        "accent": "#375b75",
+        "font": "cairo",
+        "chart": "bar",
+        "sections": [
+          {
+            "title": "ملخص الصيانة",
+            "enabled": true,
+            "columns": []
+          },
+          {
+            "title": "الأعمال الفنية",
+            "enabled": true,
+            "columns": [
+              "الموقع",
+              "العطل",
+              "الإجراء",
+              "الحالة"
+            ]
+          },
+          {
+            "title": "الأعطال المعلقة",
+            "enabled": true,
+            "columns": []
+          },
+          {
+            "title": "قطع الغيار المطلوبة",
+            "enabled": true,
+            "columns": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "5",
+      "name": "تقرير متابعة",
+      "description": "متابعة المشروعات والمهام",
+      "template": {
+        "version": 1,
+        "theme": "minimal",
+        "accent": "#506844",
+        "font": "cairo",
+        "chart": "bar",
+        "sections": [
+          {
+            "title": "ملخص المتابعة",
+            "enabled": true,
+            "columns": []
+          },
+          {
+            "title": "المهام الجارية",
+            "enabled": true,
+            "columns": [
+              "المهمة",
+              "المسؤول",
+              "الموعد",
+              "الحالة"
+            ]
+          },
+          {
+            "title": "المخاطر والمعوقات",
+            "enabled": true,
+            "columns": []
+          },
+          {
+            "title": "الخطوات المقبلة",
+            "enabled": true,
+            "columns": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "6",
+      "name": "طلبات الإدارة",
+      "description": "الاحتياجات والتوصيات الإدارية",
+      "template": {
+        "version": 1,
+        "theme": "minimal",
+        "accent": "#705279",
+        "font": "cairo",
+        "chart": "bar",
+        "sections": [
+          {
+            "title": "ملخص الاحتياجات",
+            "enabled": true,
+            "columns": []
+          },
+          {
+            "title": "الطلبات",
+            "enabled": true,
+            "columns": [
+              "الطلب",
+              "الكمية",
+              "الأولوية",
+              "المبرر"
+            ]
+          },
+          {
+            "title": "المبررات",
+            "enabled": true,
+            "columns": []
+          },
+          {
+            "title": "التوصيات",
+            "enabled": true,
+            "columns": []
+          }
+        ]
+      }
+    }
+  ]
+}

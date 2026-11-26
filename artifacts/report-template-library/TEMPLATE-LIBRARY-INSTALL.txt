@@ -1,0 +1,7 @@
+Back up the existing application files before extraction.
+Extract into /var/www/allapp/laravel and run php artisan route:clear and php artisan view:clear.
+No database migrations or .env changes are required.
+AI uses the existing REPORT_AI_KEY, REPORT_AI_MODEL, REPORT_AI_ENDPOINT settings.
+Catalog updates: edit public/report-templates/catalog.json, validate against the existing schema and update updated_at. Deploy that file to publish an update.
+Clients fetch the latest published catalog at editor load and on Refresh; no automated external crawling or scheduled generation is configured.
+AI templates are reviewed per user and can be downloaded as JSON; they are not automatically published to all users.

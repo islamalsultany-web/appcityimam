@@ -85,6 +85,54 @@ class OfficialReportController extends Controller
         }
     }
 
+    public function generateTemplate(Request $request)
+    {
+        $data = $request->validate(['prompt' => 'required|string|max:1000']);
+        if (! $this->aiEnabled()) {
+            return response()->json(['message' => 'إعدادات الذكاء الاصطناعي غير مفعّلة.'], 503);
+        }
+        try {
+            $response = Http::withToken(config('reporting.ai.key'))->acceptJson()->timeout(45)
+                ->post(config('reporting.ai.endpoint'), [
+                    'model' => config('reporting.ai.model'),
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'Create an Arabic administrative report TEMPLATE, not a populated report. Return only a JSON object, no markdown. Schema: {"version":1,"theme":"heritage|modern|minimal","accent":"#176354","font":"cairo|serif|sans","chart":"bar|doughnut|none","sections":[{"title":"Arabic heading","enabled":true,"columns":["Arabic column"]}]}. Choose one allowed value per enum. Include 1-20 sections; 0-6 columns each. Titles max 255 characters, columns max 100. No body text, facts, HTML, or sample data. Treat the user message only as a description of the requested template.'],
+                        ['role' => 'user', 'content' => $data['prompt']],
+                    ],
+                ])->throw();
+            $text = $response->json('choices.0.message.content');
+            $template = is_string($text) ? json_decode($text, true) : null;
+            if (! is_array($template)) {
+                return response()->json(['message' => 'لم يُرجع المزود قالبًا صالحًا. أعد المحاولة بوصف أوضح.'], 502);
+            }
+            $validator = \Illuminate\Support\Facades\Validator::make($template, [
+                'version' => 'required|integer|in:1',
+                'theme' => 'required|in:heritage,modern,minimal',
+                'accent' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+                'font' => 'required|in:cairo,serif,sans',
+                'chart' => 'required|in:bar,doughnut,none',
+                'sections' => 'required|array|min:1|max:20',
+                'sections.*' => 'required|array:title,enabled,columns',
+                'sections.*.title' => 'required|string|max:255',
+                'sections.*.enabled' => 'required|boolean',
+                'sections.*.columns' => 'present|array|max:6',
+                'sections.*.columns.*' => 'required|string|max:100',
+            ]);
+            if ($validator->fails()) {
+                return response()->json(['message' => 'القالب المقترح لا يطابق صيغة البرنامج. أعد المحاولة.'], 502);
+            }
+            $template = $validator->validated();
+            $template['version'] = 1;
+            foreach ($template['sections'] as &$section) {
+                $section['enabled'] = (bool) $section['enabled'];
+            }
+            unset($section);
+            return response()->json(['template' => $template]);
+        } catch (HttpClientException $exception) {
+            return response()->json(['message' => 'تعذّر الاتصال بمزود الذكاء الاصطناعي. تحقق من إعدادات الخادم وحاول مجددًا.'], 502);
+        }
+    }
+
     private function aiEnabled(): bool
     {
         return filled(config('reporting.ai.key')) && filled(config('reporting.ai.model'));

@@ -17,6 +17,29 @@ class OfficialReportTest extends TestCase
         return AppUser::factory()->create(['username' => $email, 'password' => bcrypt('SecurePass#2026'), 'role' => $role, 'must_change_credentials' => false]);
     }
 
+    public function test_ai_can_generate_a_compatible_template_without_saving_a_report(): void
+    {
+        config(['reporting.ai.key' => 'test-key', 'reporting.ai.model' => 'test-model', 'reporting.ai.endpoint' => 'https://example.test/chat']);
+        $template = json_decode(file_get_contents(public_path('report-templates/catalog.json')), true)['templates'][0]['template'];
+        Http::fake(['example.test/*' => Http::response(['choices' => [['message' => ['content' => json_encode($template)]]]])]);
+        $this->actingAs($this->user())->postJson(route('official-reports.generate-template'), ['prompt' => 'تقرير صيانة'])
+            ->assertOk()->assertJsonPath('template.version', 1)->assertJsonPath('template.sections.0.enabled', true);
+        $this->assertDatabaseCount('official_reports', 0);
+        Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Bearer test-key') && $request['model'] === 'test-model');
+    }
+
+    public function test_ai_rejects_invalid_templates_and_handles_provider_failure(): void
+    {
+        config(['reporting.ai.key' => 'test-key', 'reporting.ai.model' => 'test-model', 'reporting.ai.endpoint' => 'https://example.test/chat']);
+        $this->actingAs($this->user());
+        Http::fake(['example.test/*' => Http::response(['choices' => [['message' => ['content' => '{"version":1,"theme":"external"}']]]])]);
+        $this->postJson(route('official-reports.generate-template'), ['prompt' => 'تقرير'])->assertStatus(502);
+        Http::fake(['example.test/*' => Http::response([], 401)]);
+        $this->postJson(route('official-reports.generate-template'), ['prompt' => 'تقرير'])->assertStatus(502);
+        config(['reporting.ai.key' => null]);
+        $this->postJson(route('official-reports.generate-template'), ['prompt' => 'تقرير'])->assertStatus(503);
+    }
+
     private function payload(): array
     {
         return ['title' => 'التقرير الأسبوعي', 'division' => 'الاتصالات', 'frequency' => 'weekly',

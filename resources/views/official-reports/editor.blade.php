@@ -9,6 +9,7 @@
 <p id="builder-status" role="status" aria-live="polite"></p>
 <div class="builder-grid">
 <div class="builder-controls">
+<section class="control-card"><h2>مكتبة قوالب التقارير</h2><p class="hint">اختر قالبًا لكل تقرير جديد. تُجلب أحدث نسخة منشورة عند فتح المكتبة أو تحديثها.</p><button type="button" id="refresh-templates">تحديث المكتبة</button><p id="template-status" role="status" aria-live="polite"></p><div id="template-library"></div><label>طريقة التطبيق<select id="template-mode"><option value="design" {{ $report ? 'selected' : '' }}>تغيير المظهر فقط مع الاحتفاظ بالبيانات</option><option value="full" {{ $report ? '' : 'selected' }}>تطبيق الفقرات والجداول أيضًا</option></select></label><label>وصف قالب جديد بالذكاء الاصطناعي<textarea id="template-prompt" maxlength="1000" rows="3" placeholder="تقرير أسبوعي للصيانة يتضمن جدول الأعطال والمتابعة"></textarea></label><p class="hint">يُرسل الوصف فقط إلى مزود الذكاء الاصطناعي الحالي. راجع القالب قبل استخدامه أو تنزيله.</p><button type="button" id="generate-template" {{ $aiEnabled ? '' : 'disabled' }}>إنشاء قالب بالذكاء الاصطناعي</button><div id="generated-template"></div></section>
 <section class="control-card"><h2>01 / بيانات التقرير</h2>
 <label>عنوان التقرير<input id="field-title" required maxlength="255"></label>
 <label>الشعبة / الوحدة<input id="field-division" required maxlength="255" placeholder="مثال: وحدة الاتصالات والإنترنت"></label>
@@ -29,6 +30,6 @@
 </div></div>
 @endsection
 @push('scripts')
-<script nonce="{{ $cspNonce }}" id="report-builder-config" type="application/json">{!! json_encode(['report' => $report, 'author' => \App\Support\AppAuth::user(request())->username, 'division' => \App\Support\AppAuth::user(request())->division, 'today' => now('Asia/Baghdad')->format('Y-m-d'), 'saveUrl' => $report ? route('official-reports.update', $report) : route('official-reports.store'), 'assistUrl' => route('official-reports.assist'), 'aiEnabled' => $aiEnabled], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
-<script src="{{ asset('js/official-reports.js') }}" defer></script>
+<script nonce="{{ $cspNonce }}" id="report-builder-config" type="application/json">{!! json_encode(['report' => $report, 'author' => \App\Support\AppAuth::user(request())->username, 'division' => \App\Support\AppAuth::user(request())->division, 'today' => now('Asia/Baghdad')->format('Y-m-d'), 'saveUrl' => $report ? route('official-reports.update', $report) : route('official-reports.store'), 'assistUrl' => route('official-reports.assist'), 'aiEnabled' => $aiEnabled, 'templatesUrl' => asset('report-templates/catalog.json'), 'generateTemplateUrl' => route('official-reports.generate-template')], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
+<script src="{{ asset('js/official-reports.js').'?v='.filemtime(public_path('js/official-reports.js')) }}" defer></script>
 @endpush

@@ -126,6 +126,68 @@
     window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
     window.addEventListener('beforeprint', () => chart?.resize(600, 230));
     window.addEventListener('afterprint', () => chart?.resize());
+    function validateTemplate(t) {
+        if (!t || t.version !== 1 || !['heritage', 'modern', 'minimal'].includes(t.theme) || !/^#[0-9a-f]{6}$/i.test(t.accent) || !['cairo', 'serif', 'sans'].includes(t.font) || !['bar', 'doughnut', 'none'].includes(t.chart) || !Array.isArray(t.sections) || !t.sections.length || t.sections.length > 20) throw new Error('ملف القالب غير صالح.');
+        t.sections.forEach(s => { if (!s || typeof s.title !== 'string' || !s.title.trim() || s.title.length > 255 || typeof s.enabled !== 'boolean' || !Array.isArray(s.columns) || s.columns.length > 6 || s.columns.some(v => typeof v !== 'string' || !v.trim() || v.length > 100)) throw new Error('بنية فقرات القالب غير صالحة.'); });
+        return t;
+    }
+    function downloadTemplate(template, name = 'official-report-template') {
+        validateTemplate(template);
+        const url = URL.createObjectURL(new Blob([JSON.stringify(template, null, 2)], {type: 'application/json'}));
+        const link = node('a'); link.href = url; link.download = name + '.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    function applyLibraryTemplate(template) {
+        validateTemplate(template);
+        if ($('template-mode').value === 'full') {
+            const hasData = state.content.sections.some(s => s.body.trim() || s.rows.length);
+            if (hasData && !confirm('سيتم استبدال نصوص الفقرات وصفوف الجداول الحالية. هل تريد المتابعة؟')) return;
+            state.content.sections = template.sections.map(s => section(s.title, [...s.columns]));
+            state.content.sections.forEach((s, i) => s.enabled = template.sections[i].enabled);
+        }
+        ['theme', 'accent', 'font', 'chart'].forEach(k => state.content[k] = template[k]);
+        aiTarget = null; $('ai-result').hidden = true;
+        syncFields(); renderSections(); changed(); status('تم تطبيق القالب. احفظ التقرير للاحتفاظ به.');
+    }
+    function templateCard(item, parent) {
+        const t = validateTemplate(item.template), card = node('div', undefined, 'template-card');
+        card.append(node('h3', item.name), node('p', item.description || '', 'hint'));
+        const sample = node('div', undefined, 'template-sample');
+        sample.classList.add('sample-' + t.theme, 'font-' + t.font); sample.style.setProperty('--accent', t.accent);
+        sample.append(node('strong', item.name));
+        t.sections.forEach(s => sample.append(node('p', s.title + (s.columns.length ? ' ?' : ''))));
+        card.append(sample);
+        button('استخدام القالب', () => applyLibraryTemplate(t), card);
+        button('تنزيل JSON', () => downloadTemplate(t), card);
+        parent.append(card);
+    }
+    async function loadTemplates() {
+        const el = $('refresh-templates'); el.disabled = true;
+        $('template-status').textContent = 'جارٍ تحميل أحدث القوالب المنشورة…';
+        try {
+            const response = await fetch(config.templatesUrl, {cache: 'no-store', headers: {'Accept': 'application/json'}});
+            if (!response.ok) throw new Error('تعذّر تحميل مكتبة القوالب. حاول تحديثها مجددًا.');
+            const catalog = await response.json();
+            if (!Array.isArray(catalog.templates) || catalog.templates.length > 100) throw new Error('مكتبة القوالب غير صالحة.');
+            const cards = document.createDocumentFragment(); catalog.templates.forEach(item => templateCard(item, cards));
+            $('template-library').replaceChildren(cards);
+            $('template-status').textContent = 'آخر إصدار منشور: ' + catalog.updated_at;
+        } catch (error) { $('template-status').textContent = error.message; }
+        finally { el.disabled = false; }
+    }
+    $('refresh-templates').addEventListener('click', loadTemplates);
+    $('generate-template').addEventListener('click', async () => {
+        const prompt = $('template-prompt').value.trim();
+        if (!prompt) return status('اكتب وصف القالب المطلوب أولًا.', true);
+        const el = $('generate-template'); el.disabled = true; status('جارٍ إنشاء القالب…');
+        try {
+            const result = await request(config.generateTemplateUrl, 'POST', {prompt});
+            const cards = document.createDocumentFragment();
+            templateCard({name: 'قالب مقترح بالذكاء الاصطناعي', description: 'راجع العناوين والجداول قبل التطبيق.', template: result.template}, cards);
+            $('generated-template').replaceChildren(cards); status('القالب جاهز للمراجعة. لم تتغير بيانات تقريرك.');
+        } catch (error) { status(error.message, true); }
+        finally { el.disabled = false; }
+    });
+    loadTemplates();
     $('export-template').addEventListener('click', () => {
         const c = state.content, template = {version: 1, theme: c.theme, accent: c.accent, font: c.font, chart: c.chart, sections: c.sections.map(s => ({title: s.title, enabled: s.enabled, columns: s.columns}))};
         const url = URL.createObjectURL(new Blob([JSON.stringify(template, null, 2)], {type: 'application/json'})), link = node('a'); link.href = url; link.download = 'official-report-template.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
