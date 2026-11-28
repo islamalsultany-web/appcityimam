@@ -31,5 +31,5 @@
 @endsection
 @push('scripts')
 <script nonce="{{ $cspNonce }}" id="report-builder-config" type="application/json">{!! json_encode(['report' => $report, 'author' => \App\Support\AppAuth::user(request())->username, 'division' => \App\Support\AppAuth::user(request())->division, 'today' => now('Asia/Baghdad')->format('Y-m-d'), 'saveUrl' => $report ? route('official-reports.update', $report) : route('official-reports.store'), 'assistUrl' => route('official-reports.assist'), 'aiEnabled' => $aiEnabled, 'templatesUrl' => asset('report-templates/catalog.json'), 'generateTemplateUrl' => route('official-reports.generate-template')], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
-<script src="{{ asset('js/official-reports.js').'?v='.filemtime(public_path('js/official-reports.js')) }}" defer></script>
+<script src="{{ asset('js/official-reports.js') }}" defer></script>
 @endpush
