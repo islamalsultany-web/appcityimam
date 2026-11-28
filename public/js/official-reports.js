@@ -17,7 +17,9 @@
             ]},
     };
     const names = {daily: 'اليومي', weekly: 'الأسبوعي', monthly: 'الشهري'};
+    state.content.charts ??= [];
     let chart, dirty = false, aiTarget = null, aiBusy = false;
+    let importedCharts = [];
     const status = (message, error = false) => { $('builder-status').textContent = message; $('builder-status').classList.toggle('error', error); };
     const node = (tag, text, className) => { const el = document.createElement(tag); if (text !== undefined) el.textContent = text; if (className) el.className = className; return el; };
     const button = (text, action, parent) => { const el = node('button', text); el.type = 'button'; el.addEventListener('click', action); parent.append(el); return el; };
@@ -89,6 +91,7 @@
     function preview() {
         const paper = $('report-preview'), c = state.content;
         if (chart) { chart.destroy(); chart = null; }
+        importedCharts.forEach(item => item.destroy()); importedCharts = [];
         paper.replaceChildren(); paper.className = `report-paper theme-${c.theme} font-${c.font}`; paper.style.setProperty('--accent', c.accent);
         const header = node('div', undefined, 'paper-header'); header.append(node('p', 'العتبة الحسينية المقدسة'), node('h2', 'مدينة الإمام الحسين (عليه السلام) للزائرين'), node('p', `الشعبة / الوحدة: ${state.division || '……………………'}`)); paper.append(header);
         const meta = node('div', undefined, 'paper-meta'); meta.append(node('span', `العدد: ${c.number || '…………'}`), node('span', `تاريخ الإعداد: ${c.prepared_on}`)); paper.append(meta);
@@ -101,6 +104,22 @@
                 chart = new Chart(canvas, {type: c.chart, data: {labels: c.metrics.map(m => m.label), datasets: [{label: 'القيمة', data: c.metrics.map(m => Number(m.value) || 0), backgroundColor: c.chart === 'bar' ? c.accent : [c.accent, '#b79a57', '#436b8a', '#8b5c79', '#718657', '#c88358']}]}, options: {animation: false, responsive: true, maintainAspectRatio: false, ...(c.chart === 'bar' ? {indexAxis: 'y', scales: {x: {beginAtZero: true}}} : {}), plugins: {legend: {display: c.chart !== 'bar', rtl: true}}}});
             }
         }
+        (c.charts || []).forEach(item => {
+            const block = node('section', undefined, 'paper-section imported-chart');
+            block.append(node('h3', item.title), node('p', `وحدة القياس: ${item.unit}`, 'hint'));
+            if (typeof Chart !== 'undefined') {
+                const wrap = node('div', undefined, 'report-chart'), canvas = node('canvas');
+                canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', item.title);
+                wrap.append(canvas); block.append(wrap); paper.append(block);
+                const colors = [c.accent, '#b79a57', '#436b8a', '#8b5c79', '#718657', '#c88358', '#3a8b91', '#ad5267', '#6574a4', '#93724c', '#486f54', '#8c638a'];
+                importedCharts.push(new Chart(canvas, {type: item.type, data: {labels: item.labels, datasets: [{data: item.values, backgroundColor: item.type === 'bar' ? c.accent : colors}]}}));
+            } else paper.append(block);
+            const table = node('table'), head = node('thead'), header = node('tr');
+            header.append(node('th', 'الفئة'), node('th', item.unit)); head.append(header); table.append(head);
+            const body = node('tbody');
+            item.labels.forEach((label, i) => { const row = node('tr'); row.append(node('td', label), node('td', Number(item.values[i]).toLocaleString('ar-IQ'))); body.append(row); });
+            table.append(body); block.append(table);
+        });
         c.sections.filter(s => s.enabled).forEach(s => {
             const block = node('section', undefined, 'paper-section'); block.append(node('h3', s.title)); if (s.body) block.append(node('p', s.body));
             if (s.columns.length) {
@@ -124,8 +143,8 @@
     });
     $('print-report').addEventListener('click', () => { if (dirty) status('تُطبع المعاينة الحالية. احفظ التقرير للاحتفاظ بالتعديلات.'); window.print(); });
     window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
-    window.addEventListener('beforeprint', () => chart?.resize(600, 230));
-    window.addEventListener('afterprint', () => chart?.resize());
+    window.addEventListener('beforeprint', () => { chart?.resize(600, 230); importedCharts.forEach(item => item.resize(600, 230)); });
+    window.addEventListener('afterprint', () => { chart?.resize(); importedCharts.forEach(item => item.resize()); });
     function validateTemplate(t) {
         if (!t || t.version !== 1 || !['heritage', 'modern', 'minimal'].includes(t.theme) || !/^#[0-9a-f]{6}$/i.test(t.accent) || !['cairo', 'serif', 'sans'].includes(t.font) || !['bar', 'doughnut', 'none'].includes(t.chart) || !Array.isArray(t.sections) || !t.sections.length || t.sections.length > 20) throw new Error('ملف القالب غير صالح.');
         t.sections.forEach(s => { if (!s || typeof s.title !== 'string' || !s.title.trim() || s.title.length > 255 || typeof s.enabled !== 'boolean' || !Array.isArray(s.columns) || s.columns.length > 6 || s.columns.some(v => typeof v !== 'string' || !v.trim() || v.length > 100)) throw new Error('بنية فقرات القالب غير صالحة.'); });
@@ -214,5 +233,57 @@
     }
     $('accept-ai').addEventListener('click', () => { if (aiTarget && state.content.sections.includes(aiTarget)) { aiTarget.body = $('ai-suggestion').value; renderSections(); changed(); } else status('الفقرة الأصلية حُذفت. يمكنك نسخ الاقتراح إلى فقرة أخرى.', true); $('ai-result').hidden = true; aiTarget = null; });
     $('dismiss-ai').addEventListener('click', () => { $('ai-result').hidden = true; aiTarget = null; });
-    syncFields(); renderSections(); renderMetrics(); preview();
+    function renderImportedCharts() {
+        const container = $('excel-chart-editor'); container.replaceChildren();
+        if (!state.content.charts.length) { container.append(node('p', 'ستظهر هنا الرسوم المستخرجة من Excel بعد تطبيق التقرير.', 'hint')); return; }
+        state.content.charts.forEach((item, index) => {
+            const card = node('div', undefined, 'section-item');
+            input(card, 'عنوان الرسم', item.title, value => item.title = value).maxLength = 255;
+            const label = node('label', 'نوع الرسم'), select = node('select');
+            [['bar', 'أعمدة'], ['doughnut', 'دائري نسبي']].forEach(([value, text]) => { const option = node('option', text); option.value = value; select.append(option); });
+            select.value = item.type; select.addEventListener('change', () => { item.type = select.value; changed(); }); label.append(select); card.append(label);
+            card.append(node('p', 'الأرقام محسوبة عند الاستيراد. تعديل الجداول يدويًا لا يعيد حساب الرسوم؛ أعد استيراد الملف لتحديثها.', 'hint'));
+            button('حذف الرسم', () => { state.content.charts.splice(index, 1); renderImportedCharts(); changed(); }, card);
+            container.append(card);
+        });
+    }
+    let excelResult = null;
+    const resetExcel = () => { excelResult = null; $('excel-result').hidden = true; };
+    ['excel-files', 'excel-domain', 'excel-header-row', 'excel-use-ai', 'excel-instruction'].forEach(id => $(id).addEventListener('change', resetExcel));
+    $('analyze-excel').addEventListener('click', async () => {
+        resetExcel();
+        const files = [...$('excel-files').files], el = $('analyze-excel');
+        const reportStatus = text => $('excel-status').textContent = text;
+        if (!files.length || files.length > 5) return reportStatus('اختر من ملف واحد إلى خمسة ملفات Excel.');
+        if (files.some(file => !/\.(xlsx|xls)$/i.test(file.name) || file.size > 4 * 1024 * 1024)) return reportStatus('الملفات يجب أن تكون XLSX أو XLS وبحجم لا يتجاوز 4 ميغابايت لكل ملف.');
+        const row = Number($('excel-header-row').value);
+        if (!Number.isInteger(row) || row < 1 || row > 30) return reportStatus('اختر رقم صف العناوين بين 1 و30.');
+        const form = new FormData(); files.forEach(file => form.append('files[]', file));
+        form.append('domain', $('excel-domain').value); form.append('header_row', row);
+        form.append('use_ai', $('excel-use-ai').checked ? '1' : '0'); form.append('instruction', $('excel-instruction').value);
+        el.disabled = true; reportStatus('جارٍ قراءة الأوراق وحساب الإحصاءات وإعداد التقرير…');
+        const controls = ['excel-files', 'excel-domain', 'excel-header-row', 'excel-use-ai', 'excel-instruction'].map(id => $(id));
+        const disabled = controls.map(control => control.disabled); controls.forEach(control => control.disabled = true);
+        const abort = new AbortController(), timer = setTimeout(() => abort.abort(), 120000);
+        try {
+            const url = JSON.parse($('excel-import-config').textContent).url;
+            const response = await fetch(url, {method: 'POST', headers: {'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content}, body: form, signal: abort.signal});
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.errors ? Object.values(data.errors).flat().join('\n') : data.message || 'تعذرت قراءة الملفات. تحقق من حجمها وحدود الرفع على الخادم.');
+            excelResult = data;
+            reportStatus(`${data.title}\n${data.metrics.map(item => `${item.label}: ${item.value}`).join(' — ')}\nالرسوم: ${data.charts.length}\n${data.ai_used ? 'أُضيف تحليل مقترح بالذكاء الاصطناعي.' : 'تم التحليل محليًا.'}\n${data.warnings.join('\n')}`);
+            $('excel-result').hidden = false;
+        } catch (error) { reportStatus(error.name === 'AbortError' ? 'انتهت مهلة التحليل. جرّب عددًا أقل من الملفات.' : error.message); }
+        finally { clearTimeout(timer); el.disabled = false; controls.forEach((control, i) => control.disabled = disabled[i]); }
+    });
+    $('apply-excel').addEventListener('click', () => {
+        if (!excelResult) return;
+        if (!confirm('سيتم استبدال الفقرات والجداول والمؤشرات والرسوم والتصميم الحالية بنتيجة ملفات Excel. متابعة؟')) return;
+        state.title = excelResult.title;
+        ['theme', 'accent', 'font', 'chart', 'metrics', 'sections', 'charts'].forEach(key => state.content[key] = structuredClone(excelResult[key]));
+        aiTarget = null; $('ai-result').hidden = true;
+        syncFields(); renderSections(); renderMetrics(); renderImportedCharts(); changed(); resetExcel();
+        status('تم تطبيق تقرير Excel. راجع الجداول والرسوم والتحليل ثم احفظ التقرير.');
+    });
+    syncFields(); renderSections(); renderMetrics(); renderImportedCharts(); preview();
 })();

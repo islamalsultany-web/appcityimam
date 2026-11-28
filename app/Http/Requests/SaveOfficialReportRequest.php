@@ -7,6 +7,22 @@ use Illuminate\Validation\Rule;
 
 class SaveOfficialReportRequest extends FormRequest
 {
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            $charts = $this->input('content.charts', []);
+            if (! is_array($charts)) {
+                return;
+            }
+            foreach ($charts as $i => $chart) {
+                if (is_array($chart) && is_array($chart['labels'] ?? null) && is_array($chart['values'] ?? null)
+                    && count($chart['labels']) !== count($chart['values'])) {
+                    $validator->errors()->add('content.charts.'.$i.'.values', 'يجب أن يقابل كل عنوان في الرسم قيمة واحدة.');
+                }
+            }
+        });
+    }
+
     public function authorize(): bool
     {
         return \App\Support\AppAuth::user($this) !== null;
@@ -20,7 +36,16 @@ class SaveOfficialReportRequest extends FormRequest
             'frequency' => ['required', Rule::in(['daily', 'weekly', 'monthly'])],
             'starts_on' => 'required|date_format:Y-m-d',
             'ends_on' => 'required|date_format:Y-m-d|after_or_equal:starts_on',
-            'content' => 'required|array:theme,accent,font,chart,number,prepared_on,author,manager,attachments,sections,metrics',
+            'content' => 'required|array:theme,accent,font,chart,number,prepared_on,author,manager,attachments,sections,metrics,charts',
+            'content.charts' => 'sometimes|array|max:12',
+            'content.charts.*' => 'required|array:title,type,unit,labels,values',
+            'content.charts.*.title' => 'required|string|max:255',
+            'content.charts.*.type' => 'required|in:bar,doughnut',
+            'content.charts.*.unit' => 'required|string|max:50',
+            'content.charts.*.labels' => 'required|array|min:1|max:12',
+            'content.charts.*.labels.*' => 'required|string|max:100',
+            'content.charts.*.values' => 'required|array|min:1|max:12',
+            'content.charts.*.values.*' => 'required|numeric|min:0|max:1000000000000',
             'content.theme' => ['required', Rule::in(['heritage', 'modern', 'minimal'])],
             'content.accent' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'content.font' => ['required', Rule::in(['cairo', 'serif', 'sans'])],
