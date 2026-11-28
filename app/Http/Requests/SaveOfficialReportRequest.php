@@ -25,7 +25,7 @@ class SaveOfficialReportRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return \App\Support\AppAuth::user($this) !== null;
+        return true;
     }
 
     public function rules(): array

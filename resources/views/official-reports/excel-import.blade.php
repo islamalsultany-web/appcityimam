@@ -1,4 +1,4 @@
-<section class="control-card excel-import-card">
+<section class="control-card excel-import-card" data-workflow="source">
     <h2>تقرير تلقائي من ملفات Excel</h2>
     <p class="hint">ارفع ملفات المهام أو الموارد البشرية أو الصيانة، وسنقرأ جميع أوراقها وننشئ ملخصًا وجداول ورسومًا وألوانًا مناسبة. يمكنك مراجعة النتيجة وتعديلها قبل الحفظ أو الطباعة.</p>
     <label>ملفات Excel
@@ -21,4 +21,4 @@
         <button type="button" id="apply-excel">تطبيق النتيجة على التقرير</button>
     </div>
 </section>
-<section class="control-card"><h2>رسوم بيانات Excel</h2><div id="excel-chart-editor"></div></section>
+<section class="control-card" data-workflow="charts"><h2>رسوم بيانات Excel</h2><div id="excel-chart-editor"></div></section>

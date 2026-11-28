@@ -52,6 +52,39 @@ class OfficialReportTest extends TestCase
             ]];
     }
 
+    public function test_guests_can_manage_their_session_reports_without_exposing_other_reports(): void
+    {
+        $owner = $this->user();
+        $private = new OfficialReport($this->payload());
+        $private->user_id = $owner->id;
+        $private->title = 'PRIVATE_ACCOUNT_REPORT';
+        $private->save();
+        $this->get(route('official-reports.index'))->assertOk()->assertDontSee('PRIVATE_ACCOUNT_REPORT');
+        $this->get(route('official-reports.create'))->assertOk()->assertSee('الدخول المباشر متاح')->assertSee('excel-files');
+        $this->postJson(route('official-reports.store'), $this->payload() + ['user_id' => $owner->id, 'guest_key' => 'forged'])->assertCreated();
+        $report = OfficialReport::whereNull('user_id')->firstOrFail();
+        $token = session('official_reports_guest_token');
+        $this->assertNotEmpty($token);
+        $this->assertSame(hash('sha256', $token), $report->guest_key);
+        $this->assertArrayNotHasKey('guest_key', $report->toArray());
+        $this->get(route('official-reports.edit', $report))->assertOk();
+        $this->get(route('official-reports.index'))->assertSee($report->title)->assertDontSee('PRIVATE_ACCOUNT_REPORT');
+        $this->get(route('official-reports.edit', $private))->assertForbidden();
+        $this->delete(route('official-reports.destroy', $private))->assertForbidden();
+        $this->withSession(['official_reports_guest_token' => 'another-visitor']);
+        $this->get(route('official-reports.index'))->assertOk()->assertDontSee($report->title);
+        $this->get(route('official-reports.edit', $report))->assertForbidden();
+        $this->putJson(route('official-reports.update', $report), $this->payload())->assertForbidden();
+        $this->delete(route('official-reports.destroy', $report))->assertForbidden();
+        $this->withSession(['official_reports_guest_token' => $token]);
+        $payload = $this->payload();
+        $payload['title'] = 'UPDATED_GUEST_REPORT';
+        $this->putJson(route('official-reports.update', $report), $payload)->assertOk();
+        $this->assertSame('UPDATED_GUEST_REPORT', $report->fresh()->title);
+        $this->delete(route('official-reports.destroy', $report))->assertRedirect(route('official-reports.index'));
+        $this->assertDatabaseHas('official_reports', ['id' => $private->id]);
+    }
+
     public function test_portal_contains_program_and_legacy_session_can_create_report(): void
     {
         $user = $this->user();
@@ -78,10 +111,33 @@ class OfficialReportTest extends TestCase
             ->assertRedirect(route('user.two-factor.setup'));
     }
 
+    public function test_report_library_filters_only_accessible_reports_and_editor_has_review_tools(): void
+    {
+        $user = $this->user();
+        foreach ([['تقرير الصيانة', 'monthly'], ['تقرير المتابعة', 'daily']] as [$title, $frequency]) {
+            $report = new OfficialReport($this->payload());
+            $report->title = $title;
+            $report->frequency = $frequency;
+            $report->user_id = $user->id;
+            $report->save();
+        }
+        $other = new OfficialReport($this->payload());
+        $other->title = 'تقرير الصيانة الخاص';
+        $other->user_id = $this->user('private@example.com')->id;
+        $other->save();
+        $this->actingAs($user)->get(route('official-reports.index', ['q' => 'الصيانة', 'frequency' => 'monthly']))
+            ->assertOk()->assertSee('تقرير الصيانة')->assertDontSee('تقرير المتابعة')->assertDontSee('تقرير الصيانة الخاص')
+            ->assertViewHas('counts', fn ($counts) => $counts['total'] === 2 && $counts['monthly'] === 1)
+            ->assertViewHas('reports', fn ($reports) => $reports->total() === 1);
+        $this->get(route('official-reports.create'))->assertOk()->assertSee('data-workflow-tab="review"', false)
+            ->assertSee('quality-checklist')->assertSee('generate-executive-summary')->assertSee('download-report-text')
+            ->assertSee('js/report-quality.js')->assertSee('css/report-workflow.css');
+    }
+
     public function test_report_can_be_created_edited_and_deleted_by_owner(): void
     {
         $user = $this->user();
-        $this->get(route('official-reports.index'))->assertRedirect(route('login.form'));
+        $this->get(route('official-reports.index'))->assertOk();
         $this->actingAs($user)->get(route('official-reports.create'))->assertOk()->assertSee('صمّم تقريرًا');
         $payload = $this->payload();
         $this->postJson(route('official-reports.store'), $payload + ['user_id' => 999])->assertCreated();

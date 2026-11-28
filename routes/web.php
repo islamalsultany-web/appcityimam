@@ -52,6 +52,14 @@ Route::redirect('/users-index.html', '/users');
 Route::redirect('/users-create.html', '/users/create');
 Route::redirect('/users-excel.html', '/users/excel');
 
+// Reports are available to visitors; account checks still apply to signed-in users.
+Route::middleware(['admin.two.factor', 'secure.credentials'])->group(function (): void {
+    Route::post('/official-reports/import-excel', [\App\Http\Controllers\OfficialReportController::class, 'importExcel'])->middleware('throttle:5,1')->name('official-reports.import-excel');
+    Route::post('/official-reports/generate-template', [\App\Http\Controllers\OfficialReportController::class, 'generateTemplate'])->middleware('throttle:5,1')->name('official-reports.generate-template');
+    Route::post('/official-reports/assist', [\App\Http\Controllers\OfficialReportController::class, 'assist'])->middleware('throttle:10,1')->name('official-reports.assist');
+    Route::resource('official-reports', \App\Http\Controllers\OfficialReportController::class)->except('show');
+});
+
 Route::middleware('app.auth')->group(function (): void {
 	Route::get('/user/info', [AuthController::class, 'userInfo'])->name('user.info');
 	Route::post('/user/password', [AuthController::class, 'updatePassword'])->name('user.password.update');
@@ -64,10 +72,6 @@ Route::middleware('app.auth')->group(function (): void {
 
 	Route::middleware('admin.two.factor')->group(function (): void {
 	Route::middleware('secure.credentials')->group(function (): void {
-        Route::post('/official-reports/import-excel', [\App\Http\Controllers\OfficialReportController::class, 'importExcel'])->middleware('throttle:5,1')->name('official-reports.import-excel');
-        Route::post('/official-reports/generate-template', [\App\Http\Controllers\OfficialReportController::class, 'generateTemplate'])->middleware('throttle:5,1')->name('official-reports.generate-template');
-        Route::post('/official-reports/assist', [\App\Http\Controllers\OfficialReportController::class, 'assist'])->middleware('throttle:10,1')->name('official-reports.assist');
-        Route::resource('official-reports', \App\Http\Controllers\OfficialReportController::class)->except('show');
 
 		Route::get('/security/audit-logs', [AuditLogController::class, 'index'])
 			->middleware('super.admin')

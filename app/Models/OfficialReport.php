@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class OfficialReport extends Model
 {
+    protected $hidden = ['guest_key'];
+
     protected $fillable = ['title', 'division', 'frequency', 'starts_on', 'ends_on', 'content'];
 
     protected function casts(): array

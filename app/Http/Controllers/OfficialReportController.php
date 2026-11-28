@@ -56,11 +56,25 @@ class OfficialReportController extends Controller
 
     public function index(Request $request)
     {
-        $reports = OfficialReport::query()
-            ->when(! AdminRoleGuard::isAdmin(AppAuth::user($request)), fn ($query) => $query->where('user_id', AppAuth::id($request)))
-            ->latest()->paginate(12);
+        $filters = $request->validate(['q' => 'nullable|string|max:100', 'frequency' => 'nullable|in:daily,weekly,monthly']);
+        $query = OfficialReport::query()
+            ->when(! AdminRoleGuard::isAdmin(AppAuth::user($request)), function ($query) use ($request) {
+                if (AppAuth::id($request)) {
+                    $query->where('user_id', AppAuth::id($request));
+                } else {
+                    $query->whereNull('user_id')->where('guest_key', $this->guestKey($request));
+                }
+            });
+        $counts = ['total' => (clone $query)->count(), 'monthly' => (clone $query)->where('frequency', 'monthly')->count(),
+            'recent' => (clone $query)->where('updated_at', '>=', now()->subDays(7))->count()];
+        $reports = $query->when(filled($filters['q'] ?? null), function ($query) use ($filters) {
+            $query->where(function ($query) use ($filters) {
+                $query->where('title', 'like', '%'.$filters['q'].'%')->orWhere('division', 'like', '%'.$filters['q'].'%');
+            });
+        })->when(filled($filters['frequency'] ?? null), fn ($query) => $query->where('frequency', $filters['frequency']))
+            ->latest()->paginate(12)->withQueryString();
 
-        return view('official-reports.index', compact('reports'));
+        return view('official-reports.index', compact('reports', 'counts'));
     }
 
     public function create(Request $request)
@@ -72,6 +86,9 @@ class OfficialReportController extends Controller
     {
         $report = new OfficialReport($request->validated());
         $report->user_id = AppAuth::id($request);
+        if ($report->user_id === null) {
+            $report->guest_key = $this->guestKey($request);
+        }
         $report->save();
 
         return response()->json(['url' => route('official-reports.edit', $report), 'message' => 'تم حفظ التقرير.'], 201);
@@ -182,6 +199,19 @@ class OfficialReportController extends Controller
 
     private function checkAccess(Request $request, OfficialReport $report): void
     {
-        abort_unless(AdminRoleGuard::isAdmin(AppAuth::user($request)) || $report->user_id === AppAuth::id($request), 403);
+        $userId = AppAuth::id($request);
+        $ownsGuestReport = $userId === null && $report->user_id === null && is_string($report->guest_key)
+            && hash_equals($report->guest_key, $this->guestKey($request));
+        abort_unless(AdminRoleGuard::isAdmin(AppAuth::user($request))
+            || ($userId !== null && $report->user_id === $userId) || $ownsGuestReport, 403);
+    }
+
+    private function guestKey(Request $request): string
+    {
+        if (! $request->session()->has('official_reports_guest_token')) {
+            $request->session()->put('official_reports_guest_token', bin2hex(random_bytes(32)));
+        }
+
+        return hash('sha256', $request->session()->get('official_reports_guest_token'));
     }
 }

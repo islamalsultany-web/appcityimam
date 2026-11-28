@@ -126,10 +126,10 @@ class SpreadsheetReportTest extends TestCase
         $this->assertDatabaseCount('official_reports', 0);
     }
 
-    public function test_import_requires_login_and_completed_credentials(): void
+    public function test_import_allows_guests_and_checks_signed_in_user_credentials(): void
     {
         $file = $this->excel([[['الحالة'], ['مفتوحة']]]);
-        $this->post(route('official-reports.import-excel'), ['files' => [$file]])->assertRedirect(route('login.form'));
+        $this->analyze([$file])->assertOk();
         $user = $this->login();
         $user->update(['must_change_credentials' => true]);
         $this->analyze([$file])->assertRedirect(route('user.credentials.setup'));

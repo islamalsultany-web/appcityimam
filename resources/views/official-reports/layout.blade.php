@@ -15,7 +15,15 @@
         <a class="program-brand" href="{{ route('home') }}">العتبة الحسينية المقدسة<strong>مدينة الإمام الحسين<br>(عليه السلام) للزائرين</strong></a>
         <div class="program-label">برنامج التقارير الرسمية</div>
         <nav aria-label="التنقل"><a href="{{ route('official-reports.index') }}">▤ التقارير</a><a href="{{ route('official-reports.create') }}">＋ إنشاء تقرير</a><a href="{{ route('home') }}">← بوابة البرامج</a></nav>
-        <div class="program-user">{{ \App\Support\AppAuth::user(request())->username }}<small>{{ \App\Support\AdminRoleGuard::isAdmin(\App\Support\AppAuth::user(request())) ? 'مدير النظام' : 'حساب المنتسب' }}</small><form method="post" action="{{ route('logout') }}">@csrf<button type="submit">تسجيل الخروج</button></form></div>
+        <div class="program-user">
+            @if($reportUser = \App\Support\AppAuth::user(request()))
+                {{ $reportUser->username }}<small>{{ \App\Support\AdminRoleGuard::isAdmin($reportUser) ? 'مدير النظام' : 'حساب المنتسب' }}</small>
+                <form method="post" action="{{ route('logout') }}">@csrf<button type="submit">تسجيل الخروج</button></form>
+            @else
+                زائر<small>الدخول المباشر متاح</small>
+                <p class="hint">تقاريرك مرتبطة بجلسة هذا المتصفح. احفظ نسخة PDF للاحتفاظ بها بعد انتهاء الجلسة أو مسح بيانات المتصفح.</p>
+            @endif
+        </div>
     </aside>
     <div class="program-main"><main>
         @if(session('status'))<p class="program-notice" role="status">{{ session('status') }}</p>@endif
