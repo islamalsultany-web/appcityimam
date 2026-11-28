@@ -19,7 +19,7 @@
     const names = {daily: 'اليومي', weekly: 'الأسبوعي', monthly: 'الشهري'};
     state.content.charts ??= [];
     let chart, dirty = false, aiTarget = null, aiBusy = false, aiSummaryPending = false;
-    let importedCharts = [], previewPage = 0, renderTimer, printPreview = false;
+    let importedCharts = [], previewPage = 0, renderTimer, printPreview = false, printPrepared = false;
     const tablePositions = new WeakMap();
     const status = (message, error = false) => { $('builder-status').textContent = message; $('builder-status').classList.toggle('error', error); };
     const node = (tag, text, className) => { const el = document.createElement(tag); if (text !== undefined) el.textContent = text; if (className) el.className = className; return el; };
@@ -123,7 +123,9 @@
         if (chart) { chart.destroy(); chart = null; }
         importedCharts.forEach(item => item.destroy()); importedCharts = [];
         paper.replaceChildren(); paper.className = `report-paper theme-${c.theme} font-${c.font}`; paper.style.setProperty('--accent', c.accent);
-        const header = node('div', undefined, 'paper-header'); header.append(node('p', 'العتبة الحسينية المقدسة'), node('h2', 'مدينة الإمام الحسين (عليه السلام) للزائرين'), node('p', `الشعبة / الوحدة: ${state.division || '……………………'}`)); paper.append(header);
+        const header = node('div', undefined, 'paper-header');
+        const logo = node('img', undefined, 'paper-logo'); logo.src = config.logoUrl; logo.alt = 'شعار مدينة الإمام الحسين عليه السلام للزائرين'; logo.width = 150; logo.height = 170;
+        header.append(logo, node('p', 'العتبة الحسينية المقدسة'), node('h2', 'مدينة الإمام الحسين (عليه السلام) للزائرين'), node('p', `الشعبة / الوحدة: ${state.division || '……………………'}`)); paper.append(header);
         const meta = node('div', undefined, 'paper-meta'); meta.append(node('span', `العدد: ${c.number || '…………'}`), node('span', `تاريخ الإعداد: ${c.prepared_on}`)); paper.append(meta);
         paper.append(node('p', 'إلى / السيد مدير مدينة الإمام الحسين (عليه السلام) للزائرين المحترم'), node('h1', `م / ${state.title}`, 'paper-title'), node('p', `الفترة المشمولة بالتقرير: من ${state.starts_on} إلى ${state.ends_on}`), node('p', 'تحية طيبة…'), node('p', `نرفع إلى جنابكم تقرير أعمال ${state.division || '[اسم الشعبة أو الوحدة]'} للفترة أعلاه، متضمنًا الأعمال المنجزة والأعمال قيد المتابعة والمعوقات والإجراءات المتخذة بشأنها، وكما يأتي.`));
         if (c.metrics.length) {
@@ -174,10 +176,16 @@
         const el = $('save-report'); el.disabled = true; status('جارٍ حفظ التقرير…');
         try { const result = await request(config.saveUrl, config.report ? 'PUT' : 'POST', state); dirty = false; $('report-save-state').textContent = 'تم حفظ التعديلات'; status(result.message); if (result.url) window.location.assign(result.url); } catch (error) { status(error.message, true); } finally { el.disabled = false; }
     });
-    $('print-report').addEventListener('click', () => { if (dirty) status('تُطبع المعاينة الحالية. احفظ التقرير للاحتفاظ بالتعديلات.'); window.print(); });
+    $('print-report').addEventListener('click', async () => {
+        if (dirty) status('تُطبع المعاينة الحالية. احفظ التقرير للاحتفاظ بالتعديلات.');
+        clearTimeout(renderTimer); preview(true);
+        await (document.fonts?.ready || Promise.resolve());
+        await Promise.all([...$('report-preview').querySelectorAll('img')].map(img => img.decode().catch(() => {})));
+        printPrepared = true; window.print();
+    });
     window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
-    window.addEventListener('beforeprint', () => { clearTimeout(renderTimer); preview(true); chart?.resize(600, 230); importedCharts.forEach(item => item.resize(600, 230)); });
-    window.addEventListener('afterprint', () => preview());
+    window.addEventListener('beforeprint', () => { clearTimeout(renderTimer); if (!printPrepared) preview(true); chart?.resize(600, 230); importedCharts.forEach(item => item.resize(600, 230)); });
+    window.addEventListener('afterprint', () => { printPrepared = false; preview(); });
     $('preview-page-prev').addEventListener('click', () => { previewPage--; preview(); });
     $('preview-page-next').addEventListener('click', () => { previewPage++; preview(); });
     function setPrintPreview(active) {
@@ -437,7 +445,7 @@
         const url = new URL(location.href); url.searchParams.delete('print');
         history.replaceState(history.state, '', url);
         (document.fonts?.ready || Promise.resolve()).then(() => {
-            requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
+            requestAnimationFrame(() => requestAnimationFrame(() => $('print-report').click()));
         });
     }
 })();
