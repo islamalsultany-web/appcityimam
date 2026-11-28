@@ -19,11 +19,12 @@
     const names = {daily: 'اليومي', weekly: 'الأسبوعي', monthly: 'الشهري'};
     state.content.charts ??= [];
     let chart, dirty = false, aiTarget = null, aiBusy = false, aiSummaryPending = false;
-    let importedCharts = [];
+    let importedCharts = [], previewPage = 0, renderTimer;
+    const tablePositions = new WeakMap();
     const status = (message, error = false) => { $('builder-status').textContent = message; $('builder-status').classList.toggle('error', error); };
     const node = (tag, text, className) => { const el = document.createElement(tag); if (text !== undefined) el.textContent = text; if (className) el.className = className; return el; };
     const button = (text, action, parent) => { const el = node('button', text); el.type = 'button'; el.addEventListener('click', action); parent.append(el); return el; };
-    const changed = () => { dirty = true; $('report-save-state').textContent = 'تعديلات غير محفوظة'; preview(); updateQuality(); };
+    const changed = () => { dirty = true; $('report-save-state').textContent = 'تعديلات غير محفوظة'; clearTimeout(renderTimer); renderTimer = setTimeout(() => { preview(); updateQuality(); }, 180); };
     const input = (parent, label, value, update, type = 'text') => {
         const wrapper = node('label', label), el = node(type === 'textarea' ? 'textarea' : 'input');
         if (type !== 'textarea') el.type = type; else el.rows = 3;
@@ -54,10 +55,13 @@
             const card = node('details', undefined, 'section-item'); card.dataset.section = index;
             card.open = firstRender ? index === 0 : opened.has(index);
             const heading = node('summary', `${index + 1}. ${s.title || 'فقرة دون عنوان'}`); card.append(heading);
+            let loaded = false;
+            const load = () => {
+            if (loaded || !card.open) return; loaded = true;
             const toggle = node('label'), checkbox = node('input'); checkbox.type = 'checkbox'; checkbox.checked = s.enabled;
             checkbox.addEventListener('change', () => { s.enabled = checkbox.checked; changed(); }); toggle.append(checkbox, document.createTextNode('إظهار الفقرة')); card.append(toggle);
             input(card, 'عنوان الفقرة', s.title, value => { s.title = value; heading.textContent = `${index + 1}. ${value || 'فقرة دون عنوان'}`; }).maxLength = 255;
-            input(card, 'نص الفقرة', s.body, value => s.body = value, 'textarea').maxLength = 12000;
+            input(card, 'نص الفقرة', s.body, value => s.body = value, 'textarea');
             const actions = node('div', undefined, 'section-actions');
             button('↑', () => moveSection(index, -1), actions).setAttribute('aria-label', 'نقل الفقرة للأعلى');
             button('↓', () => moveSection(index, 1), actions).setAttribute('aria-label', 'نقل الفقرة للأسفل');
@@ -65,15 +69,31 @@
             const ai = button('اقتراح صياغة', () => assist(s), actions); ai.disabled = !config.aiEnabled || aiBusy;
             card.append(actions);
             if (s.columns.length) {
+                const position = tablePositions.get(s) || {row: 0, column: 0};
+                position.row = Math.min(position.row, Math.max(0, Math.ceil(s.rows.length / 50) - 1));
+                position.column = Math.min(position.column, Math.max(0, Math.ceil(s.columns.length / 6) - 1));
+                tablePositions.set(s, position);
                 const scroll = node('div', undefined, 'table-editor'), table = node('table'), head = node('tr');
-                s.columns.forEach((column, i) => { const cell = node('th'); input(cell, `عنوان العمود ${i + 1}`, column, v => s.columns[i] = v).maxLength = 100; head.append(cell); }); table.append(head);
-                s.rows.forEach((row, rowIndex) => {
-                    const tr = node('tr'); s.columns.forEach((_, colIndex) => { const td = node('td'); input(td, `صف ${rowIndex + 1}، عمود ${colIndex + 1}`, row[colIndex], v => row[colIndex] = v).maxLength = 1000; tr.append(td); });
+                const shownColumns = s.columns.slice(position.column * 6, position.column * 6 + 6);
+                shownColumns.forEach((column, localIndex) => { const i = position.column * 6 + localIndex; const cell = node('th'); input(cell, `عنوان العمود ${i + 1}`, column, v => s.columns[i] = v).maxLength = 100; head.append(cell); }); table.append(head);
+                s.rows.slice(position.row * 50, position.row * 50 + 50).forEach((row, localIndex) => {
+                    const rowIndex = position.row * 50 + localIndex;
+                    const tr = node('tr'); shownColumns.forEach((_, columnIndex) => { const colIndex = position.column * 6 + columnIndex; const td = node('td'); input(td, `صف ${rowIndex + 1}، عمود ${colIndex + 1}`, row[colIndex], v => row[colIndex] = v); tr.append(td); });
                     const td = node('td'); button('حذف', () => { s.rows.splice(rowIndex, 1); renderSections(); changed(); }, td); tr.append(td); table.append(tr);
                 }); scroll.append(table); card.append(scroll);
-                button('+ صف', () => { if (s.rows.length >= 100) return status('الحد الأقصى 100 صف لكل جدول.', true); s.rows.push(s.columns.map(() => '')); renderSections(); changed(); }, card);
+                const pages = node('div', undefined, 'section-actions');
+                pages.append(node('p', `صفوف ${s.rows.length} · أعمدة ${s.columns.length} · جزء الصفوف ${position.row + 1}/${Math.max(1, Math.ceil(s.rows.length / 50))} · جزء الأعمدة ${position.column + 1}/${Math.ceil(s.columns.length / 6)}`, 'hint'));
+                button('الصفوف السابقة', () => { position.row--; renderSections(); }, pages).disabled = position.row === 0;
+                button('الصفوف التالية', () => { position.row++; renderSections(); }, pages).disabled = (position.row + 1) * 50 >= s.rows.length;
+                button('الأعمدة السابقة', () => { position.column--; renderSections(); }, pages).disabled = position.column === 0;
+                button('الأعمدة التالية', () => { position.column++; renderSections(); }, pages).disabled = (position.column + 1) * 6 >= s.columns.length;
+                card.append(pages);
+                button('+ صف', () => { s.rows.push(s.columns.map(() => '')); position.row = Math.floor((s.rows.length - 1) / 50); renderSections(); changed(); }, card);
+                button('+ عمود', () => { s.columns.push('عمود جديد'); s.rows.forEach(row => row.push('')); position.column = Math.floor((s.columns.length - 1) / 6); renderSections(); changed(); }, card);
                 button('إزالة الجدول', () => { if (s.rows.length && !confirm('إزالة الجدول وبياناته؟')) return; s.columns = []; s.rows = []; renderSections(); changed(); }, card);
             } else button('+ جدول', () => { s.columns = ['العمل', 'المسؤول', 'الموعد', 'الملاحظات']; renderSections(); changed(); }, card);
+            };
+            card.addEventListener('toggle', load); load();
             container.append(card);
         });
     }
@@ -81,7 +101,7 @@
         const next = index + delta; if (next < 0 || next >= state.content.sections.length) return;
         [state.content.sections[index], state.content.sections[next]] = [state.content.sections[next], state.content.sections[index]]; renderSections(); changed();
     }
-    $('add-section').addEventListener('click', () => { if (state.content.sections.length >= 20) return status('الحد الأقصى 20 فقرة.', true); state.content.sections.push(section('فقرة إضافية')); renderSections(); changed(); });
+    $('add-section').addEventListener('click', () => {  state.content.sections.push(section('فقرة إضافية')); renderSections(); changed(); });
     function renderMetrics() {
         $('metrics-editor').replaceChildren();
         state.content.metrics.forEach((metric, index) => {
@@ -92,9 +112,13 @@
             button('حذف المؤشر', () => { state.content.metrics.splice(index, 1); renderMetrics(); changed(); }, card); $('metrics-editor').append(card);
         });
     }
-    $('add-metric').addEventListener('click', () => { if (state.content.metrics.length >= 12) return status('الحد الأقصى 12 مؤشرًا.', true); state.content.metrics.push({label: 'مؤشر جديد', value: 0, unit: ''}); renderMetrics(); changed(); });
-    function preview() {
+    $('add-metric').addEventListener('click', () => { state.content.metrics.push({label: 'مؤشر جديد', value: 0, unit: ''}); renderMetrics(); changed(); });
+    function preview(forPrint = false) {
         const paper = $('report-preview'), c = state.content;
+        const enabled = c.sections.filter(s => s.enabled), pages = Math.max(1, Math.ceil(enabled.length / 6), Math.ceil(c.charts.length / 6));
+        previewPage = Math.min(previewPage, pages - 1);
+        $('preview-page-label').textContent = `جزء المعاينة ${previewPage + 1} / ${pages} · الطباعة تشمل جميع الأجزاء`;
+        $('preview-page-prev').disabled = previewPage === 0; $('preview-page-next').disabled = previewPage === pages - 1;
         if (chart) { chart.destroy(); chart = null; }
         importedCharts.forEach(item => item.destroy()); importedCharts = [];
         paper.replaceChildren(); paper.className = `report-paper theme-${c.theme} font-${c.font}`; paper.style.setProperty('--accent', c.accent);
@@ -109,7 +133,7 @@
                 chart = new Chart(canvas, {type: c.chart, data: {labels: c.metrics.map(m => m.label), datasets: [{label: 'القيمة', data: c.metrics.map(m => Number(m.value) || 0), backgroundColor: c.chart === 'bar' ? c.accent : [c.accent, '#b79a57', '#436b8a', '#8b5c79', '#718657', '#c88358']}]}, options: {animation: false, responsive: true, maintainAspectRatio: false, ...(c.chart === 'bar' ? {indexAxis: 'y', scales: {x: {beginAtZero: true}}} : {}), plugins: {legend: {display: c.chart !== 'bar', rtl: true}}}});
             }
         }
-        (c.charts || []).forEach(item => {
+        (forPrint ? c.charts : c.charts.slice(previewPage * 6, previewPage * 6 + 6)).forEach(item => {
             const block = node('section', undefined, 'paper-section imported-chart');
             block.append(node('h3', item.title), node('p', `وحدة القياس: ${item.unit}`, 'hint'));
             if (typeof Chart !== 'undefined') {
@@ -125,19 +149,20 @@
             item.labels.forEach((label, i) => { const row = node('tr'); row.append(node('td', label), node('td', Number(item.values[i]).toLocaleString('ar-IQ'))); body.append(row); });
             table.append(body); block.append(table);
         });
-        c.sections.filter(s => s.enabled).forEach(s => {
+        (forPrint ? enabled : enabled.slice(previewPage * 6, previewPage * 6 + 6)).forEach(s => {
             const block = node('section', undefined, 'paper-section'); block.append(node('h3', s.title)); if (s.body) block.append(node('p', s.body));
             if (s.columns.length) {
                 const table = node('table'), head = node('thead'), tr = node('tr'); tr.append(node('th', 'ت')); s.columns.forEach(col => tr.append(node('th', col))); head.append(tr); table.append(head);
-                const body = node('tbody'); s.rows.forEach((row, index) => { const line = node('tr'); line.append(node('td', String(index + 1))); s.columns.forEach((_, i) => line.append(node('td', row[i] || '—'))); body.append(line); }); table.append(body); block.append(table);
+                const body = node('tbody'); (forPrint ? s.rows : s.rows.slice(0, 100)).forEach((row, index) => { const line = node('tr'); line.append(node('td', String(index + 1))); s.columns.forEach((_, i) => line.append(node('td', row[i] || '—'))); body.append(line); }); table.append(body); block.append(table);
+                if (!forPrint && s.rows.length > 100) block.append(node('p', 'تظهر أول 100 من '+s.rows.length+' صفًا في المعاينة. جميع الصفوف محفوظة وتظهر عند الطباعة وتنزيل النص؛ استخدم محرر الجدول لتصفحها.', 'hint'));
             } paper.append(block);
         });
         if (c.attachments) paper.append(node('p', `المرفقات: ${c.attachments}`));
         paper.append(node('p', 'مع فائق الاحترام والتقدير.'));
         const signatures = node('div', undefined, 'paper-signatures'); signatures.append(node('p', `إعداد التقرير: ${c.author}\nالتوقيع: ……………………`), node('p', `مسؤول الشعبة / الوحدة: ${c.manager || '……………………'}\nالتوقيع: ……………………`)); paper.append(signatures, node('div', 'مدينة الإمام الحسين (عليه السلام) للزائرين • ' + names[state.frequency], 'paper-footer'));
     }
-    async function request(url, method, body) {
-        const response = await fetch(url, {method, headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content}, body: JSON.stringify(body)});
+    async function request(url, method, body, signal) {
+        const response = await fetch(url, {method, headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content}, body: JSON.stringify(body), signal});
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.errors ? Object.values(data.errors).flat().join('\n') : data.message || 'تعذر تنفيذ الطلب. تحقق من الاتصال وصلاحية تسجيل الدخول.');
         return data;
@@ -150,11 +175,13 @@
     });
     $('print-report').addEventListener('click', () => { if (dirty) status('تُطبع المعاينة الحالية. احفظ التقرير للاحتفاظ بالتعديلات.'); window.print(); });
     window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
-    window.addEventListener('beforeprint', () => { chart?.resize(600, 230); importedCharts.forEach(item => item.resize(600, 230)); });
-    window.addEventListener('afterprint', () => { chart?.resize(); importedCharts.forEach(item => item.resize()); });
+    window.addEventListener('beforeprint', () => { clearTimeout(renderTimer); preview(true); chart?.resize(600, 230); importedCharts.forEach(item => item.resize(600, 230)); });
+    window.addEventListener('afterprint', () => preview());
+    $('preview-page-prev').addEventListener('click', () => { previewPage--; preview(); });
+    $('preview-page-next').addEventListener('click', () => { previewPage++; preview(); });
     function validateTemplate(t) {
-        if (!t || t.version !== 1 || !['heritage', 'modern', 'minimal'].includes(t.theme) || !/^#[0-9a-f]{6}$/i.test(t.accent) || !['cairo', 'serif', 'sans'].includes(t.font) || !['bar', 'doughnut', 'none'].includes(t.chart) || !Array.isArray(t.sections) || !t.sections.length || t.sections.length > 20) throw new Error('ملف القالب غير صالح.');
-        t.sections.forEach(s => { if (!s || typeof s.title !== 'string' || !s.title.trim() || s.title.length > 255 || typeof s.enabled !== 'boolean' || !Array.isArray(s.columns) || s.columns.length > 6 || s.columns.some(v => typeof v !== 'string' || !v.trim() || v.length > 100)) throw new Error('بنية فقرات القالب غير صالحة.'); });
+        if (!t || t.version !== 1 || !['heritage', 'modern', 'minimal'].includes(t.theme) || !/^#[0-9a-f]{6}$/i.test(t.accent) || !['cairo', 'serif', 'sans'].includes(t.font) || !['bar', 'doughnut', 'none'].includes(t.chart) || !Array.isArray(t.sections) || !t.sections.length) throw new Error('ملف القالب غير صالح.');
+        t.sections.forEach(s => { if (!s || typeof s.title !== 'string' || !s.title.trim() || s.title.length > 255 || typeof s.enabled !== 'boolean' || !Array.isArray(s.columns) || s.columns.some(v => typeof v !== 'string' || !v.trim() || v.length > 100)) throw new Error('بنية فقرات القالب غير صالحة.'); });
         return t;
     }
     function downloadTemplate(template, name = 'official-report-template') {
@@ -222,8 +249,8 @@
         try {
             const file = event.target.files[0]; if (!file) return; if (file.size > 100000) throw new Error('حجم القالب يجب ألا يتجاوز 100 كيلوبايت.');
             const t = JSON.parse(await file.text());
-            if (t.version !== 1 || !['heritage', 'modern', 'minimal'].includes(t.theme) || !/^#[0-9a-f]{6}$/i.test(t.accent) || !['cairo', 'serif', 'sans'].includes(t.font) || !['bar', 'doughnut', 'none'].includes(t.chart) || !Array.isArray(t.sections) || !t.sections.length || t.sections.length > 20) throw new Error('ملف القالب غير صالح.');
-            t.sections.forEach(s => { if (typeof s.title !== 'string' || !s.title.trim() || s.title.length > 255 || typeof s.enabled !== 'boolean' || !Array.isArray(s.columns) || s.columns.length > 6 || s.columns.some(v => typeof v !== 'string' || !v.trim() || v.length > 100)) throw new Error('بنية فقرات القالب غير صالحة.'); });
+            if (t.version !== 1 || !['heritage', 'modern', 'minimal'].includes(t.theme) || !/^#[0-9a-f]{6}$/i.test(t.accent) || !['cairo', 'serif', 'sans'].includes(t.font) || !['bar', 'doughnut', 'none'].includes(t.chart) || !Array.isArray(t.sections) || !t.sections.length) throw new Error('ملف القالب غير صالح.');
+            t.sections.forEach(s => { if (typeof s.title !== 'string' || !s.title.trim() || s.title.length > 255 || typeof s.enabled !== 'boolean' || !Array.isArray(s.columns) || s.columns.some(v => typeof v !== 'string' || !v.trim() || v.length > 100)) throw new Error('بنية فقرات القالب غير صالحة.'); });
             if (!confirm('تطبيق التصميم فقط؟ اضغط موافق للاحتفاظ بالفقرات والبيانات الحالية.')) {
                 if (!confirm('هل تريد استبدال الفقرات والجداول بالقالب؟ ستُحذف نصوص الفقرات وصفوفها الحالية.')) return;
                 state.content.sections = t.sections.map(s => ({title: s.title, enabled: s.enabled, columns: [...s.columns], body: '', rows: []}));
@@ -240,7 +267,7 @@
     }
     $('accept-ai').addEventListener('click', () => {
         if (aiSummaryPending) {
-            if (state.content.sections.length >= 20) return status('بلغ التقرير حد 20 فقرة. احذف فقرة أو انسخ الاقتراح إلى فقرة موجودة.', true);
+
             const summary = section('ملخص تنفيذي — مقترح بالذكاء الاصطناعي'); summary.body = $('ai-suggestion').value;
             state.content.sections.unshift(summary); renderSections(); changed();
         } else if (aiTarget && state.content.sections.includes(aiTarget)) { aiTarget.body = $('ai-suggestion').value; renderSections(); changed(); }
@@ -262,34 +289,53 @@
             container.append(card);
         });
     }
-    let excelResult = null;
+    let excelResult = null, excelAbort = null;
+    $('cancel-excel').addEventListener('click', () => excelAbort?.abort());
     const resetExcel = () => { excelResult = null; $('excel-result').hidden = true; };
     ['excel-files', 'excel-domain', 'excel-header-row', 'excel-use-ai', 'excel-instruction'].forEach(id => $(id).addEventListener('change', resetExcel));
     $('analyze-excel').addEventListener('click', async () => {
         resetExcel();
         const files = [...$('excel-files').files], el = $('analyze-excel');
         const reportStatus = text => $('excel-status').textContent = text;
-        if (!files.length || files.length > 5) return reportStatus('اختر من ملف واحد إلى خمسة ملفات Excel.');
-        if (files.some(file => !/\.(xlsx|xls)$/i.test(file.name) || file.size > 4 * 1024 * 1024)) return reportStatus('الملفات يجب أن تكون XLSX أو XLS وبحجم لا يتجاوز 4 ميغابايت لكل ملف.');
+        if (!files.length) return reportStatus('اختر ملفات Excel أولًا.');
+        if (files.some(file => !/\.(xlsx|xls)$/i.test(file.name) || !file.size)) return reportStatus('اختر ملفات Excel غير فارغة بصيغة XLSX أو XLS.');
         const row = Number($('excel-header-row').value);
-        if (!Number.isInteger(row) || row < 1 || row > 30) return reportStatus('اختر رقم صف العناوين بين 1 و30.');
-        const form = new FormData(); files.forEach(file => form.append('files[]', file));
-        form.append('domain', $('excel-domain').value); form.append('header_row', row);
-        form.append('use_ai', $('excel-use-ai').checked ? '1' : '0'); form.append('instruction', $('excel-instruction').value);
+        if (!Number.isSafeInteger(row) || row < 1) return reportStatus('اختر رقم صف عناوين صحيحًا يبدأ من 1.');
+        const options = {domain: $('excel-domain').value, header_row: row, use_ai: $('excel-use-ai').checked, instruction: $('excel-instruction').value};
         el.disabled = true; reportStatus('جارٍ قراءة الأوراق وحساب الإحصاءات وإعداد التقرير…');
         const controls = ['excel-files', 'excel-domain', 'excel-header-row', 'excel-use-ai', 'excel-instruction'].map(id => $(id));
         const disabled = controls.map(control => control.disabled); controls.forEach(control => control.disabled = true);
-        const abort = new AbortController(), timer = setTimeout(() => abort.abort(), 120000);
+        const abort = new AbortController(); excelAbort = abort;
+        const settings = JSON.parse($('excel-import-config').textContent), uploaded = [];
+        const csrf = document.querySelector('meta[name=csrf-token]').content;
+        const progress = $('excel-progress'); progress.hidden = false; progress.value = 0; $('cancel-excel').hidden = false;
+        const totalBytes = files.reduce((sum, file) => sum + file.size, 0); let sentBytes = 0;
         try {
-            const url = JSON.parse($('excel-import-config').textContent).url;
-            const response = await fetch(url, {method: 'POST', headers: {'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content}, body: form, signal: abort.signal});
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(data.errors ? Object.values(data.errors).flat().join('\n') : data.message || 'تعذرت قراءة الملفات. تحقق من حجمها وحدود الرفع على الخادم.');
+            for (let index = 0; index < files.length; index++) {
+                const file = files[index];
+                const upload = await request(settings.uploadUrl, 'POST', {name: file.name, size: file.size}, abort.signal);
+                uploaded.push(upload.id);
+                for (let offset = 0; offset < file.size;) {
+                    const part = file.slice(offset, offset + upload.chunk_size), form = new FormData();
+                    form.append('offset', offset); form.append('chunk', part, 'chunk.bin');
+                    const response = await fetch(`${settings.uploadUrl}/${upload.id}`, {method: 'POST', headers: {'Accept': 'application/json', 'X-CSRF-TOKEN': csrf}, body: form, signal: abort.signal});
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) throw new Error(data.errors ? Object.values(data.errors).flat().join('\n') : data.message || 'تعذر رفع جزء من الملف. تحقق من الاتصال ومساحة التخزين وإعدادات الخادم.');
+                    if (data.received !== offset + part.size) throw new Error('لم يؤكد الخادم اكتمال رفع الجزء. أعد المحاولة.');
+                    offset = data.received; sentBytes += part.size; progress.value = sentBytes / totalBytes * 100;
+                    reportStatus(`رفع الملف ${index + 1} من ${files.length}: ${file.name}\n${Math.round(progress.value)}% من إجمالي البيانات`);
+                }
+            }
+            reportStatus('اكتمل الرفع. جارٍ قراءة الأوراق وإعداد الجداول والإحصاءات؛ قد تستغرق الملفات الكبيرة وقتًا أطول…'); progress.removeAttribute('value');
+            const data = await request(settings.url, 'POST', {...options, uploads: uploaded}, abort.signal);
             excelResult = data;
             reportStatus(`${data.title}\n${data.metrics.map(item => `${item.label}: ${item.value}`).join(' — ')}\nالرسوم: ${data.charts.length}\n${data.ai_used ? 'أُضيف تحليل مقترح بالذكاء الاصطناعي.' : 'تم التحليل محليًا.'}\n${data.warnings.join('\n')}`);
             $('excel-result').hidden = false;
-        } catch (error) { reportStatus(error.name === 'AbortError' ? 'انتهت مهلة التحليل. جرّب عددًا أقل من الملفات.' : error.message); }
-        finally { clearTimeout(timer); el.disabled = false; controls.forEach((control, i) => control.disabled = disabled[i]); }
+        } catch (error) { reportStatus(error.name === 'AbortError' ? 'أُلغيت العملية. لم يتغير تقريرك الحالي.' : error.message); }
+        finally {
+            excelAbort = null; progress.hidden = true; $('cancel-excel').hidden = true; el.disabled = false; controls.forEach((control, i) => control.disabled = disabled[i]);
+            for (const id of uploaded) { try { await fetch(`${settings.uploadUrl}/${id}`, {method: 'DELETE', headers: {'Accept': 'application/json', 'X-CSRF-TOKEN': csrf}}); } catch {} }
+        }
     });
     $('apply-excel').addEventListener('click', () => {
         if (!excelResult) return;
@@ -338,7 +384,7 @@
         });
     }
     document.querySelectorAll('[data-add-outline]').forEach(el => el.addEventListener('click', () => {
-        if (state.content.sections.length >= 20) return status('الحد الأقصى 20 فقرة.', true);
+
         const kind = el.dataset.addOutline;
         const added = section({summary: 'الملخص التنفيذي', findings: 'النتائج الرئيسية والأدلة', actions: 'التوصيات وخطة الإجراءات'}[kind], kind === 'actions' ? ['الإجراء المقترح', 'المسؤول', 'الموعد المستهدف', 'مؤشر المتابعة'] : []);
         if (kind === 'summary') state.content.sections.unshift(added); else state.content.sections.push(added);

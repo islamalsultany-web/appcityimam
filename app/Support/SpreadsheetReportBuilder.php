@@ -39,57 +39,20 @@ class SpreadsheetReportBuilder
             $reader->setIncludeCharts(false);
             try {
                 $info = $reader->listWorksheetInfo($path);
-                if (count($info) + $sheetCount > 8) {
-                    $this->fail('الحد الأقصى ثماني أوراق عمل في الطلب الواحد. قسّم الملفات إلى تقارير منفصلة.');
-                }
-                foreach ($info as $sheetInfo) {
-                    if ($sheetInfo['totalRows'] > 1030 || $sheetInfo['totalColumns'] > 24) {
-                        $this->fail('كل ورقة يجب ألا تتجاوز 1030 صفًا و24 عمودًا، بما فيها العناوين. احذف الصفوف والأعمدة الزائدة أو قسّم الملف.');
-                    }
-                }
-                $workbook = $reader->load($path);
+
             } catch (ValidationException $exception) {
                 throw $exception;
             } catch (\Throwable $exception) {
                 $this->fail('تعذرت قراءة ملف Excel. تأكد أنه سليم وغير محمي بكلمة مرور.');
             }
             try {
-                foreach ($workbook->getWorksheetIterator() as $sheet) {
+                foreach ($info as $sheetInfo) {
                     $sheetCount++;
-                    $name = mb_substr($file->getClientOriginalName().' / '.$sheet->getTitle(), 0, 150);
+                    $name = mb_substr($file->getClientOriginalName().' / '.$sheetInfo['worksheetName'], 0, 150);
                     $rows = [];
                     $columns = null;
                     $formulaMissing = false;
-                    for ($r = $headerRow; $r <= $sheet->getHighestDataRow(); $r++) {
-                        $row = [];
-                        $width = Coordinate::columnIndexFromString($sheet->getHighestDataColumn());
-                        for ($c = 1; $c <= $width; $c++) {
-                            $cell = $sheet->getCell(Coordinate::stringFromColumnIndex($c).$r);
-                            $value = $cell->getValue();
-                            if ($cell->isFormula()) {
-                                $value = $cell->getOldCalculatedValue();
-                                if ($value === null) {
-                                    $formulaMissing = true;
-                                }
-                            }
-                            if ($value instanceof RichText) {
-                                $value = $value->getPlainText();
-                            }
-                            if (is_bool($value)) {
-                                $value = $value ? 'TRUE' : 'FALSE';
-                            }
-                            if (is_numeric($value) && Date::isDateTime($cell)) {
-                                $value = Date::excelToDateTimeObject((float) $value)->format('Y-m-d H:i');
-                            }
-                            $value = trim((string) $value);
-                            if (mb_strlen($value) > 1000) {
-                                $this->fail('توجد خلية أطول من 1000 حرف في '.$name.'. اختصرها قبل الاستيراد.');
-                            }
-                            $row[] = $value;
-                        }
-                        if (count(array_filter($row, fn ($v) => $v !== '')) === 0) {
-                            continue;
-                        }
+                    foreach ($this->readRows($reader, $path, $sheetInfo, $headerRow, $formulaMissing) as $row) {
                         if ($columns === null) {
                             $columns = array_map(fn ($v, $i) => mb_substr($v !== '' ? $v : 'عمود '.($i + 1), 0, 100), $row, array_keys($row));
                         } else {
@@ -122,9 +85,6 @@ class SpreadsheetReportBuilder
                     }
                     foreach (array_chunk($rows, 100) as $page => $chunk) {
                         foreach (array_chunk($columns, 6) as $part => $headers) {
-                            if (count($sections) >= 18) {
-                                $this->fail('حجم البيانات يتجاوز 18 جدولًا (100 صف و6 أعمدة لكل جدول). قسّم الملفات إلى أكثر من تقرير؛ لم يُستورد جزء من البيانات.');
-                            }
                             $sections[] = ['title' => $name.' — صفوف '.($page * 100 + 1).'–'.($page * 100 + count($chunk)).' / أعمدة '.($part * 6 + 1).'–'.($part * 6 + count($headers)),
                                 'body' => $page === 0 && $part === 0 ? $sheetNotes : '', 'enabled' => true, 'columns' => $headers,
                                 'rows' => array_map(fn ($row) => array_slice($row, $part * 6, count($headers)), $chunk)];
@@ -132,9 +92,10 @@ class SpreadsheetReportBuilder
                     }
                     $charts = array_merge($charts, $this->charts($columns, $analysisRows, $name), $numeric['charts']);
                 }
-            } finally {
-                $workbook->disconnectWorksheets();
-                unset($workbook);
+            } catch (ValidationException $exception) {
+                throw $exception;
+            } catch (\Throwable $exception) {
+                $this->fail('تعذرت قراءة بيانات Excel. تحقق من سلامة الملف وموارد الخادم.');
             }
         }
         if (! $sources) {
@@ -149,14 +110,63 @@ class SpreadsheetReportBuilder
         }
         $summary .= "\n".implode("\n", $warnings);
         array_unshift($sections, ['title' => 'ملخص الملفات وملاحظات القراءة', 'body' => $summary, 'enabled' => true, 'columns' => [], 'rows' => []]);
-        if (count($charts) > 12) {
-            $warnings[] = 'تم عرض أول 12 مخططًا فقط؛ جميع بيانات الجداول مستوردة.';
-        }
         return ['title' => 'تقرير '.$labels[$kind].' من ملفات Excel', 'theme' => 'modern', 'accent' => $colors[$kind], 'font' => 'cairo', 'chart' => 'none',
             'metrics' => [['label' => 'الملفات', 'value' => count($files), 'unit' => 'ملف'], ['label' => 'أوراق البيانات', 'value' => count($sources), 'unit' => 'ورقة'], ['label' => 'السجلات', 'value' => $records, 'unit' => 'سجل']],
-            'sections' => $sections, 'charts' => array_slice($charts, 0, 12), 'warnings' => $warnings,
+            'sections' => $sections, 'charts' => $charts, 'warnings' => $warnings,
             // Only aggregates are supplied to the optional AI, never source rows.
-            'analysis' => ['records' => $records, 'sheets' => count($sources), 'domain' => $labels[$kind], 'charts' => array_slice($charts, 0, 12)]];
+            'analysis' => ['records' => $records, 'sheets' => count($sources), 'domain' => $labels[$kind], 'charts' => $charts]];
+    }
+
+    private function readRows($reader, string $path, array $info, int $headerRow, bool &$formulaMissing): \Generator
+    {
+        $reader->setLoadSheetsOnly([$info['worksheetName']]);
+        // Batch size controls working memory; it is not a limit on imported rows.
+        for ($start = $headerRow; $start <= $info['totalRows']; $start += 1000) {
+            $end = min($start + 999, $info['totalRows']);
+            $reader->setReadFilter(new class($start, $end) implements \PhpOffice\PhpSpreadsheet\Reader\IReadFilter {
+                public function __construct(private int $start, private int $end) {}
+                public function readCell($columnAddress, $row, $worksheetName = '')
+                {
+                    return $row >= $this->start && $row <= $this->end;
+                }
+            });
+            $workbook = $reader->load($path);
+            try {
+                $sheet = $workbook->getSheetByName($info['worksheetName']);
+                for ($r = $start; $r <= $end; $r++) {
+                    $row = [];
+                    for ($c = 1; $c <= $info['totalColumns']; $c++) {
+                        $address = Coordinate::stringFromColumnIndex($c).$r;
+                        if (! $sheet->cellExists($address)) {
+                            $row[] = '';
+                            continue;
+                        }
+                        $cell = $sheet->getCell($address);
+                        $value = $cell->getValue();
+                        if ($cell->isFormula()) {
+                            $value = $cell->getOldCalculatedValue();
+                            $formulaMissing = $formulaMissing || $value === null;
+                        }
+                        if ($value instanceof RichText) {
+                            $value = $value->getPlainText();
+                        }
+                        if (is_bool($value)) {
+                            $value = $value ? 'TRUE' : 'FALSE';
+                        }
+                        if (is_numeric($value) && Date::isDateTime($cell)) {
+                            $value = Date::excelToDateTimeObject((float) $value)->format('Y-m-d H:i');
+                        }
+                        $row[] = trim((string) $value);
+                    }
+                    if (count(array_filter($row, fn ($value) => $value !== '')) > 0) {
+                        yield $row;
+                    }
+                }
+            } finally {
+                $workbook->disconnectWorksheets();
+                unset($workbook);
+            }
+        }
     }
 
     private function detect(string $text): string
@@ -195,13 +205,12 @@ class SpreadsheetReportBuilder
             }
             $charts[] = ['title' => mb_substr($name.' — التوزيع حسب '.$header, 0, 255), 'type' => count($counts) <= 5 ? 'doughnut' : 'bar',
                 'unit' => 'سجل', 'labels' => array_map('strval', array_keys($counts)), 'values' => array_values($counts)];
-            if (count($charts) === 2) {
-                break;
-            }
         }
         if (! $charts) {
-            $charts[] = ['title' => mb_substr($name.' — اكتمال البيانات حسب العمود', 0, 255), 'type' => 'bar', 'unit' => 'خلية غير فارغة',
-                'labels' => array_slice($columns, 0, 12), 'values' => array_map(fn ($i) => count(array_filter($rows, fn ($row) => $row[$i] !== '')), array_slice(array_keys($columns), 0, 12))];
+            foreach (array_chunk(array_keys($columns), 12) as $part => $indices) {
+                $charts[] = ['title' => mb_substr($name.' — اكتمال البيانات حسب العمود / '.($part + 1), 0, 255), 'type' => 'bar', 'unit' => 'خلية غير فارغة',
+                    'labels' => array_map(fn ($i) => $columns[$i], $indices), 'values' => array_map(fn ($i) => count(array_filter($rows, fn ($row) => $row[$i] !== '')), $indices)];
+            }
         }
         return $charts;
     }
@@ -230,7 +239,7 @@ class SpreadsheetReportBuilder
             }
             $sum = array_sum($numbers);
             $notes[] = $header.': مجموع '.round($sum, 2).'، أدنى '.min($numbers).'، أعلى '.max($numbers).' ('.count($numbers).' خلية رقمية من '.count($rows).' سجلًا). تُجمع القيم كما وردت؛ تحقق من وحدة القياس وتجانسها.';
-            if (min($numbers) >= 0 && $sum <= 1e12 && count($charts) < 2) {
+            if (min($numbers) >= 0 && $sum <= 1e12) {
                 $charts[] = ['title' => mb_substr($name.' — مجموع '.$header, 0, 255), 'type' => 'bar', 'unit' => mb_substr($header, 0, 50), 'labels' => [mb_substr($header, 0, 100)], 'values' => [$sum]];
             }
         }
@@ -244,13 +253,8 @@ class SpreadsheetReportBuilder
             $this->fail('ملف XLSX غير صالح.');
         }
         try {
-            $size = 0;
-            for ($i = 0; $i < $zip->numFiles; $i++) {
-                $entry = $zip->statIndex($i);
-                $size += $entry['size'];
-                if ($size > 40 * 1024 * 1024 || $zip->numFiles > 2000) {
-                    $this->fail('حجم محتوى Excel بعد فك الضغط كبير جدًا. قسّم الملف قبل الرفع.');
-                }
+            if ($zip->locateName('[Content_Types].xml') === false || $zip->locateName('xl/workbook.xml') === false) {
+                $this->fail('ملف XLSX لا يحتوي بنية مصنف Excel صحيحة.');
             }
         } finally {
             $zip->close();

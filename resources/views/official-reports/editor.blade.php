@@ -32,11 +32,11 @@
 @include('official-reports.review')
 <div class="workflow-actions"><button type="button" id="workflow-back">→ السابق</button><span id="workflow-current"></span><button type="button" id="workflow-next" class="primary">التالي ←</button></div>
 </div>
-<div class="preview-column"><div class="preview-label">معاينة مباشرة <button type="button" id="toggle-preview" aria-pressed="false">توسيع المعاينة</button><span>معاينة متصلة · تُقسّم إلى صفحات A4 عند الطباعة</span></div><article id="report-preview" class="report-paper"></article></div>
+<div class="preview-column"><div class="preview-label">معاينة مباشرة <button type="button" id="toggle-preview" aria-pressed="false">توسيع المعاينة</button><span>معاينة متصلة · تُقسّم إلى صفحات A4 عند الطباعة</span></div><div class="preview-pagination"><button type="button" id="preview-page-prev">الجزء السابق</button><span id="preview-page-label" aria-live="polite"></span><button type="button" id="preview-page-next">الجزء التالي</button></div><article id="report-preview" class="report-paper"></article></div>
 </div></div>
 @endsection
 @push('scripts')
-<script nonce="{{ $cspNonce }}" id="excel-import-config" type="application/json">{!! json_encode(['url' => route('official-reports.import-excel')], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
+<script nonce="{{ $cspNonce }}" id="excel-import-config" type="application/json">{!! json_encode(['url' => route('official-reports.import-excel'), 'uploadUrl' => route('official-reports.uploads.start')], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 <script nonce="{{ $cspNonce }}" id="report-builder-config" type="application/json">{!! json_encode(['report' => $report, 'author' => \App\Support\AppAuth::user(request())?->username ?? '', 'division' => \App\Support\AppAuth::user(request())?->division ?? '', 'today' => now('Asia/Baghdad')->format('Y-m-d'), 'saveUrl' => $report ? route('official-reports.update', $report) : route('official-reports.store'), 'assistUrl' => route('official-reports.assist'), 'aiEnabled' => $aiEnabled, 'templatesUrl' => asset('report-templates/catalog.json'), 'generateTemplateUrl' => route('official-reports.generate-template')], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!}</script>
 <script src="{{ asset('js/report-quality.js') }}" defer></script>
 <script src="{{ asset('js/official-reports.js') }}" defer></script>

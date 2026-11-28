@@ -116,13 +116,12 @@ class SpreadsheetReportTest extends TestCase
         $this->assertDatabaseCount('official_reports', 0);
     }
 
-    public function test_invalid_empty_and_over_limit_workbooks_are_rejected(): void
+    public function test_invalid_and_empty_workbooks_are_rejected(): void
     {
         $this->login();
         $this->analyze([UploadedFile::fake()->createWithContent('fake.xlsx', '<html>not excel</html>')])->assertUnprocessable();
         $this->analyze([$this->excel([[['المهمة']]])])->assertUnprocessable();
-        $this->analyze([$this->excel([array_fill(0, 1000, array_fill(0, 24, 'value'))])])->assertUnprocessable();
-        $this->analyze([$this->excel([[['المهمة'], ['أ']]])], ['header_row' => 31])->assertUnprocessable();
+        $this->analyze([$this->excel([[['المهمة'], ['أ']]])], ['header_row' => 0])->assertUnprocessable();
         $this->assertDatabaseCount('official_reports', 0);
     }
 
@@ -133,6 +132,88 @@ class SpreadsheetReportTest extends TestCase
         $user = $this->login();
         $user->update(['must_change_credentials' => true]);
         $this->analyze([$file])->assertRedirect(route('user.credentials.setup'));
+    }
+
+    public function test_import_and_save_exceed_the_previous_file_sheet_row_column_and_table_limits(): void
+    {
+        $user = $this->login();
+        $headers = array_map(fn ($i) => 'عمود '.$i, range(1, 25));
+        $rows = [$headers];
+        for ($i = 1; $i <= 1031; $i++) {
+            $rows[] = array_map(fn ($j) => 'R'.$i.'C'.$j, range(1, 25));
+        }
+        $sheets = [$rows];
+        for ($i = 1; $i < 9; $i++) {
+            $sheets[] = [['المهمة'], ['سجل '.$i]];
+        }
+        $files = [$this->excel($sheets)];
+        for ($i = 1; $i < 6; $i++) {
+            $files[] = $this->excel([[['المهمة'], ['ملف '.$i]]]);
+        }
+        $data = $this->analyze($files)->assertOk()->assertJsonPath('metrics.0.value', 6)
+            ->assertJsonPath('metrics.1.value', 14)->assertJsonPath('metrics.2.value', 1044)->json();
+        $this->assertGreaterThan(20, count($data['sections']));
+        $this->assertGreaterThan(12, count($data['charts']));
+        $this->assertSame('R1031C25', $data['sections'][55]['rows'][30][0]);
+        $content = array_intersect_key($data, array_flip(['theme', 'accent', 'font', 'chart', 'sections', 'charts', 'metrics']));
+        $content += ['number' => '', 'prepared_on' => '2026-11-28', 'author' => $user->username, 'manager' => '', 'attachments' => ''];
+        $this->postJson(route('official-reports.store'), ['title' => $data['title'], 'division' => 'الوحدة', 'frequency' => 'daily', 'starts_on' => '2026-11-28', 'ends_on' => '2026-11-28', 'content' => $content])->assertCreated();
+        $this->assertCount(count($data['sections']), OfficialReport::firstOrFail()->content['sections']);
+        $this->assertCount(count($data['charts']), OfficialReport::firstOrFail()->content['charts']);
+        $content['sections'] = [['title' => 'جدول دون تقسيم', 'body' => str_repeat('م', 13000), 'enabled' => true, 'columns' => $headers, 'rows' => array_slice($rows, 1)]];
+        $report = OfficialReport::firstOrFail();
+        $this->putJson(route('official-reports.update', $report), ['title' => $data['title'], 'division' => 'الوحدة', 'frequency' => 'daily', 'starts_on' => '2026-11-28', 'ends_on' => '2026-11-28', 'content' => $content])->assertOk();
+        $saved = $report->fresh()->content['sections'][0];
+        $this->assertCount(25, $saved['columns']);
+        $this->assertCount(1031, $saved['rows']);
+        $this->assertSame(13000, mb_strlen($saved['body']));
+    }
+
+    public function test_header_row_after_thirty_and_long_cells_are_preserved(): void
+    {
+        $rows = array_fill(0, 30, []);
+        $rows[] = ['المهمة'];
+        $rows[] = [str_repeat('م', 1500)];
+        $this->analyze([$this->excel([$rows])], ['header_row' => 31])->assertOk()->assertJsonPath('sections.1.rows.0.0', str_repeat('م', 1500));
+    }
+
+    public function test_chunked_upload_accepts_a_file_larger_than_four_megabytes(): void
+    {
+        $file = $this->excel([[['المهمة'], ['ملف كبير']]]);
+        $zip = new \ZipArchive;
+        $zip->open($file->getRealPath());
+        $zip->addFromString('padding.bin', str_repeat('x', 5 * 1024 * 1024));
+        $zip->setCompressionName('padding.bin', \ZipArchive::CM_STORE);
+        $zip->close();
+        $contents = file_get_contents($file->getRealPath());
+        $this->assertGreaterThan(4 * 1024 * 1024, strlen($contents));
+        $upload = $this->postJson(route('official-reports.uploads.start'), ['name' => 'large.xlsx', 'size' => strlen($contents)])->assertCreated()->json();
+        try {
+            for ($offset = 0; $offset < strlen($contents); $offset += $upload['chunk_size']) {
+                $part = substr($contents, $offset, $upload['chunk_size']);
+                $this->post(route('official-reports.uploads.append', $upload['id']), ['offset' => $offset, 'chunk' => UploadedFile::fake()->createWithContent('part.bin', $part)], ['Accept' => 'application/json'])
+                    ->assertOk()->assertJsonPath('received', $offset + strlen($part));
+            }
+            $this->postJson(route('official-reports.import-excel'), ['uploads' => [$upload['id']], 'domain' => 'auto', 'header_row' => 1, 'use_ai' => false])
+                ->assertOk()->assertJsonPath('sections.1.rows.0.0', 'ملف كبير');
+            $this->assertDirectoryDoesNotExist(storage_path('framework/report-uploads/'.$upload['id']));
+        } finally {
+            \Illuminate\Support\Facades\File::deleteDirectory(storage_path('framework/report-uploads/'.$upload['id']));
+        }
+    }
+
+    public function test_chunk_upload_checks_session_ownership_offsets_and_completion(): void
+    {
+        $upload = $this->postJson(route('official-reports.uploads.start'), ['name' => 'book.xlsx', 'size' => 4])->assertCreated()->json();
+        $owner = session('report_excel_upload_owner');
+        $url = route('official-reports.uploads.append', $upload['id']);
+        $this->post($url, ['offset' => 1, 'chunk' => UploadedFile::fake()->createWithContent('part.bin', 'a')], ['Accept' => 'application/json'])->assertConflict();
+        $this->postJson(route('official-reports.import-excel'), ['uploads' => [$upload['id']], 'domain' => 'auto', 'header_row' => 1, 'use_ai' => false])->assertUnprocessable();
+        $this->withSession(['report_excel_upload_owner' => 'another-visitor']);
+        $this->deleteJson(route('official-reports.uploads.delete', $upload['id']))->assertNotFound();
+        $this->post($url, ['offset' => 0, 'chunk' => UploadedFile::fake()->createWithContent('part.bin', 'a')], ['Accept' => 'application/json'])->assertNotFound();
+        $this->withSession(['report_excel_upload_owner' => $owner]);
+        $this->deleteJson(route('official-reports.uploads.delete', $upload['id']))->assertNoContent();
     }
 
     public function test_numeric_summary_excludes_totals_and_does_not_sum_identifiers(): void

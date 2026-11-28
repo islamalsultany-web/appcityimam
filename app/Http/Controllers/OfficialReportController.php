@@ -12,17 +12,50 @@ use Illuminate\Support\Facades\Http;
 
 class OfficialReportController extends Controller
 {
-    public function importExcel(Request $request, \App\Support\SpreadsheetReportBuilder $builder)
+    public function startExcelUpload(Request $request, \App\Support\ReportExcelUploads $uploads)
+    {
+        return response()->json($uploads->start($request), 201);
+    }
+
+    public function appendExcelUpload(Request $request, string $upload, \App\Support\ReportExcelUploads $uploads)
+    {
+        return response()->json($uploads->append($request, $upload));
+    }
+
+    public function deleteExcelUpload(Request $request, string $upload, \App\Support\ReportExcelUploads $uploads)
+    {
+        $uploads->remove($request, $upload);
+
+        return response()->noContent();
+    }
+
+    public function importExcel(Request $request, \App\Support\SpreadsheetReportBuilder $builder, \App\Support\ReportExcelUploads $uploads)
     {
         $data = $request->validate([
-            'files' => 'required|array|min:1|max:5',
-            'files.*' => 'required|file|max:4096',
+            'files' => 'required_without:uploads|array|min:1',
+            'files.*' => 'required|file',
+            'uploads' => 'required_without:files|array|min:1',
+            'uploads.*' => 'required|uuid|distinct',
             'domain' => 'required|in:auto,tasks,hr,maintenance,general',
-            'header_row' => 'required|integer|min:1|max:30',
+            'header_row' => 'required|integer|min:1',
             'use_ai' => 'required|boolean',
             'instruction' => 'nullable|string|max:1000',
         ]);
-        $result = $builder->build($request->file('files'), $data['domain'], (int) $data['header_row']);
+        // Request/proxy timeouts remain deployment settings; no application import deadline.
+        set_time_limit(0);
+        $files = $request->file('files', []);
+        $resolved = [];
+        try {
+            foreach ($data['uploads'] ?? [] as $id) {
+                $files[] = $uploads->resolve($request, $id);
+                $resolved[] = $id;
+            }
+            $result = $builder->build($files, $data['domain'], (int) $data['header_row']);
+        } finally {
+            foreach ($resolved as $id) {
+                $uploads->remove($request, $id);
+            }
+        }
         $result['ai_used'] = false;
         if ($request->boolean('use_ai')) {
             if (! $this->aiEnabled()) {
