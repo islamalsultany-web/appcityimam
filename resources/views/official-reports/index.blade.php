@@ -26,7 +26,9 @@
         <div class="text-sm text-emerald-700">{{ ['daily'=>'يومي','weekly'=>'أسبوعي','monthly'=>'شهري'][$report->frequency] }} · {{ $report->division }}</div>
         <h2 class="text-lg font-bold my-3">{{ $report->title }}</h2>
         <p class="text-sm text-slate-500 mb-5">{{ $report->starts_on->format('Y/m/d') }} — {{ $report->ends_on->format('Y/m/d') }}</p>
-        <div class="flex justify-between items-center"><a class="text-navy-700 font-bold" href="{{ route('official-reports.edit', $report) }}">فتح وتحرير ←</a>
+        <div class="flex flex-wrap justify-between items-center gap-3"><a class="text-navy-700 font-bold" href="{{ route('official-reports.edit', $report) }}">فتح وتحرير ←</a>
+        <a class="report-preview-link" href="{{ route('official-reports.edit', ['official_report' => $report, 'preview' => 1]) }}" target="_blank" rel="noopener" aria-label="معاينة التقرير قبل الطباعة: {{ $report->title }}">معاينة قبل الطباعة</a>
+        <a class="report-print-link" href="{{ route('official-reports.edit', ['official_report' => $report, 'print' => 1]) }}" target="_blank" rel="noopener" aria-label="طباعة التقرير: {{ $report->title }}">طباعة / PDF</a>
         <form method="post" action="{{ route('official-reports.destroy', $report) }}" data-confirm-delete>@csrf @method('DELETE')<button class="text-red-600 text-sm">حذف</button></form></div>
     </article>
 @empty

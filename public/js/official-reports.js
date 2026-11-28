@@ -19,7 +19,7 @@
     const names = {daily: 'اليومي', weekly: 'الأسبوعي', monthly: 'الشهري'};
     state.content.charts ??= [];
     let chart, dirty = false, aiTarget = null, aiBusy = false, aiSummaryPending = false;
-    let importedCharts = [], previewPage = 0, renderTimer;
+    let importedCharts = [], previewPage = 0, renderTimer, printPreview = false;
     const tablePositions = new WeakMap();
     const status = (message, error = false) => { $('builder-status').textContent = message; $('builder-status').classList.toggle('error', error); };
     const node = (tag, text, className) => { const el = document.createElement(tag); if (text !== undefined) el.textContent = text; if (className) el.className = className; return el; };
@@ -114,6 +114,7 @@
     }
     $('add-metric').addEventListener('click', () => { state.content.metrics.push({label: 'مؤشر جديد', value: 0, unit: ''}); renderMetrics(); changed(); });
     function preview(forPrint = false) {
+        forPrint = forPrint || printPreview;
         const paper = $('report-preview'), c = state.content;
         const enabled = c.sections.filter(s => s.enabled), pages = Math.max(1, Math.ceil(enabled.length / 6), Math.ceil(c.charts.length / 6));
         previewPage = Math.min(previewPage, pages - 1);
@@ -179,6 +180,19 @@
     window.addEventListener('afterprint', () => preview());
     $('preview-page-prev').addEventListener('click', () => { previewPage--; preview(); });
     $('preview-page-next').addEventListener('click', () => { previewPage++; preview(); });
+    function setPrintPreview(active) {
+        clearTimeout(renderTimer); printPreview = active;
+        $('report-builder').classList.toggle('print-preview', active);
+        $('print-preview-toolbar').hidden = !active;
+        preview();
+        if (active) $('print-preview-toolbar').scrollIntoView({behavior: 'smooth', block: 'start'});
+        else {
+            const url = new URL(location.href); url.searchParams.delete('preview'); history.replaceState(history.state, '', url);
+        }
+    }
+    $('open-print-preview').addEventListener('click', () => setPrintPreview(true));
+    $('exit-print-preview').addEventListener('click', () => setPrintPreview(false));
+    $('confirm-preview-print').addEventListener('click', () => $('print-report').click());
     function validateTemplate(t) {
         if (!t || t.version !== 1 || !['heritage', 'modern', 'minimal'].includes(t.theme) || !/^#[0-9a-f]{6}$/i.test(t.accent) || !['cairo', 'serif', 'sans'].includes(t.font) || !['bar', 'doughnut', 'none'].includes(t.chart) || !Array.isArray(t.sections) || !t.sections.length) throw new Error('ملف القالب غير صالح.');
         t.sections.forEach(s => { if (!s || typeof s.title !== 'string' || !s.title.trim() || s.title.length > 255 || typeof s.enabled !== 'boolean' || !Array.isArray(s.columns) || s.columns.some(v => typeof v !== 'string' || !v.trim() || v.length > 100)) throw new Error('بنية فقرات القالب غير صالحة.'); });
@@ -418,4 +432,12 @@
     syncFields(); renderSections(); renderMetrics(); renderImportedCharts(); preview(); updateQuality();
     showStep(config.report || new URLSearchParams(location.search).get('start') === 'details' ? 'details' : 'source');
     workflowReady = true;
+    if (config.report && new URLSearchParams(location.search).get('preview') === '1') setPrintPreview(true);
+    if (config.report && new URLSearchParams(location.search).get('print') === '1') {
+        const url = new URL(location.href); url.searchParams.delete('print');
+        history.replaceState(history.state, '', url);
+        (document.fonts?.ready || Promise.resolve()).then(() => {
+            requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
+        });
+    }
 })();

@@ -8,6 +8,11 @@
 <div id="report-builder">
 <div class="builder-toolbar"><div><a href="{{ route('official-reports.index') }}" class="text-sm text-slate-500">التقارير الرسمية / محرر التقرير</a><h1 class="text-2xl font-extrabold text-navy-900 mt-2">صمّم تقريرًا يليق بعملك</h1></div><div class="flex gap-2"><button type="button" id="save-report" class="primary">حفظ التقرير</button><button type="button" id="print-report">طباعة / PDF</button></div></div>
 <p id="builder-status" role="status" aria-live="polite"></p>
+<div class="print-preview-toolbar" id="print-preview-toolbar" hidden>
+    <div><strong>معاينة التقرير قبل الطباعة</strong><p>تظهر جميع الفقرات والجداول والرسوم. راجع تقسيم صفحات A4 النهائي في نافذة الطباعة.</p></div>
+    <div class="section-actions"><button type="button" id="confirm-preview-print" class="primary">طباعة / حفظ PDF</button><button type="button" id="exit-print-preview">العودة للتحرير</button><a href="{{ route('official-reports.index') }}">قائمة التقارير</a></div>
+</div>
+<button type="button" id="open-print-preview" class="open-print-preview">معاينة كاملة قبل الطباعة</button>
 @include('official-reports.workflow')
 <div class="builder-grid">
 <div class="builder-controls">
